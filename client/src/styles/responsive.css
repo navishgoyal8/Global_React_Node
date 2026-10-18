@@ -1,0 +1,51 @@
+/* src/styles/responsive.css */
+
+/* =========================================
+   MOBILE PHONES (Max width: 767px)
+   ========================================= */
+@media screen and (max-width: 767px) {
+  .main-content {
+    max-width: 100%;
+  }
+
+  .inbox-feed {
+    padding: 0;
+    border-radius: 0;
+    border: none;
+  }
+
+  .bottom-search-bar {
+    width: 100%;
+    left: 0;
+  }
+}
+
+/* =========================================
+   TABLETS & PCs (Min width: 768px)
+   ========================================= */
+@media screen and (min-width: 768px) {
+  .main-content {
+    max-width: 800px; /* Prevents messages from getting too wide on huge monitors */
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+
+  .inbox-feed {
+    border-radius: 8px; /* Rounds the corners of the inbox on PC */
+    border: 1px solid #EAECEF;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  /* Center the bottom search bar to match the 800px feed width */
+  .bottom-search-bar {
+    max-width: 800px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 12px 12px 0 0; 
+  }
+
+  /* Keep the floating blue pencil near the feed, not off in the corners of a large monitor */
+  .floating-action-button {
+    right: calc(50% - 400px - 70px); 
+  }
+}

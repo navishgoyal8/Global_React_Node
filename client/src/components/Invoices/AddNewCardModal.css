@@ -1,0 +1,42 @@
+.add-card-backdrop { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; z-index: 9999999; padding: 16px; }
+        .add-card-modal { background: #ffffff; border-radius: 12px; width: 100%; max-width: 440px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); overflow: hidden; animation: slideUp 0.2s ease-out; box-sizing: border-box; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .add-card-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #f3f4f6; }
+        .add-card-title { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; color: #111827; margin: 0; }
+        .card-icon-blue { display: flex; align-items: center; justify-content: center; width: 28px; height: 20px; background: #2563eb; border-radius: 4px; color: white; font-size: 12px; }
+        .close-button { background: none; border: none; font-size: 20px; color: #6b7280; cursor: pointer; padding: 4px; line-height: 1; border-radius: 4px; transition: background 0.2s; }
+        .close-button:hover { background: #f3f4f6; color: #111827; }
+
+        .add-card-body { padding: 24px; }
+        .input-group { margin-bottom: 16px; }
+        .input-label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+        
+        .input-wrapper { position: relative; display: flex; align-items: center; }
+        .styled-input { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; color: #111827; outline: none; transition: border-color 0.2s, box-shadow 0.2s; box-sizing: border-box; }
+        .styled-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .styled-input::placeholder { color: #9ca3af; }
+        
+        .card-input { padding-left: 40px; padding-right: 120px; font-variant-numeric: tabular-nums; }
+        .left-icon { position: absolute; left: 12px; color: #9ca3af; font-size: 16px; pointer-events: none; }
+        .card-brands { position: absolute; right: 12px; display: flex; gap: 4px; pointer-events: none; align-items: center; }
+        .brand-logo { height: 16px; width: 24px; object-fit: contain; }
+
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .cvc-input { padding-right: 40px; }
+        .cvc-icon { position: absolute; right: 12px; color: #9ca3af; font-size: 18px; pointer-events: none; }
+
+        .security-note { display: flex; align-items: center; gap: 8px; margin-top: 20px; font-size: 12px; color: #6b7280; }
+        .lock-icon { color: #eab308; font-size: 14px; }
+
+        .add-card-footer { padding: 0 24px 24px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn-cancel { padding: 10px; background: white; border: 1px solid #d1d5db; border-radius: 6px; color: #2563eb; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.2s; }
+        .btn-cancel:hover { background: #f9fafb; border-color: #9ca3af; }
+        .btn-add { padding: 10px; background: #2563eb; border: 1px solid #2563eb; border-radius: 6px; color: white; font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.2s; }
+        .btn-add:hover { background: #1d4ed8; }
+
+        /* Responsive Adjustments */
+        @media (max-width: 480px) {
+          .add-card-modal { margin: 16px; width: auto; }
+          .row-2 { grid-template-columns: 1fr; gap: 16px; } /* Stack CVC and Expiry on very small phones */
+        }

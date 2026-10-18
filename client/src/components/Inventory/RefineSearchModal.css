@@ -1,0 +1,314 @@
+/* ✅ 1. CSS Reset & Base Rules (Prevents the horizontal scrollbar) */
+.refine-modal-container *, 
+.refine-modal-container *::before, 
+.refine-modal-container *::after {
+  box-sizing: border-box;
+}
+
+.refine-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999999;
+  padding: 20px;
+}
+
+.refine-modal-container {
+  background: white;
+  width: 100%;
+  max-width: 850px;
+  height: 90vh;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  animation: slideUp 0.3s ease-out;
+}
+
+.refine-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.refine-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #111827;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* ✅ 2. Layouts */
+.refine-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* ✅ FIX: Prevent filter group columns from overflowing */
+.filter-group {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.filter-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.filter-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  background-color: white;
+}
+
+/* ✅ FIX: Tighter gap & padding so inputs don't overflow on desktop */
+.range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.range-inputs input {
+  flex: 1;
+  padding: 10px 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  text-align: center;
+  min-width: 0; /* ✅ Key fix — prevents flex blowout */
+  font-size: 13px;
+}
+
+.range-inputs span {
+  flex-shrink: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* ✅ 3. Buttons */
+.refine-actions {
+  display: flex;
+  gap: 16px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.btn-clear {
+  flex: 1;
+  padding: 12px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #dc2626;
+  cursor: pointer;
+}
+
+.btn-view {
+  flex: 1;
+  padding: 12px;
+  background: #1d4ed8;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+}
+
+/* ✅ 4. Vehicles Grid */
+.vehicles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.vehicle-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.vehicle-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+  border-color: #cbd5e1;
+}
+
+.vehicle-card.selected {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px #2563eb;
+}
+
+.card-image-wrapper {
+  position: relative;
+  height: 160px;
+  background: #f3f4f6;
+}
+
+.card-image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-checkbox {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 20px;
+  height: 20px;
+  accent-color: #2563eb;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.card-details {
+  padding: 16px;
+}
+
+.card-details h4 {
+  margin: 0 0 8px 0;
+  font-size: 15px;
+  color: #111827;
+}
+
+.card-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.card-meta .price {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.card-meta .mileage {
+  color: #6b7280;
+}
+
+.card-location {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.refine-footer {
+  padding: 16px 24px;
+  background: #f8fafc;
+  border-top: 1px solid #e5e7eb;
+}
+
+.btn-apply {
+  width: 100%;
+  padding: 14px;
+  background: #16a34a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========================================================
+   📱 MOBILE RESPONSIVENESS
+   ======================================================== */
+@media (max-width: 768px) {
+  .refine-modal-backdrop {
+    padding: 10px;
+  }
+
+  .refine-modal-container {
+    height: 95vh;
+    max-height: 95vh;
+  }
+
+  .refine-header {
+    padding: 16px 20px;
+  }
+
+  .refine-content {
+    padding: 20px;
+  }
+
+  /* Stack the filters into 1 column instead of 2 */
+  .filters-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* Stack the Clear and View buttons on top of each other */
+  .refine-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .btn-clear, .btn-view {
+    width: 100%; 
+    padding: 14px;
+  }
+
+  /* ✅ Stack range inputs vertically on mobile */
+  .range-inputs {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .range-inputs span {
+    display: none; /* Hide the — dash when stacked */
+  }
+
+  .range-inputs input {
+    width: 100%;
+  }
+
+  /* Force the vehicle cards into a single tall column */
+  .vehicles-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Make the car photos slightly taller since they take up the full width now */
+  .card-image-wrapper {
+    height: 200px; 
+  }
+}

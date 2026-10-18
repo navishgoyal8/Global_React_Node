@@ -1,0 +1,288 @@
+/* Container for each thread */
+.thread-card {
+  background-color: #ffffff;
+  border-bottom: 2px solid #eaecef;
+  padding: 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  /* Prevent any child from overflowing horizontally */
+  overflow: hidden;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* 1. Header Row */
+.thread-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0; /* allows flex children to shrink */
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.user-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-role {
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.user-badge {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+/* 2. Meta Row (Date & Route) */
+.thread-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.meta-text {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.meta-date {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.meta-route {
+  color: #4b5563;
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: #166534;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.icon-btn:hover {
+  background-color: #dcfce7;
+}
+
+/* 3. Tags & Assign Row */
+.thread-tags-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.assign-icon-btn {
+  background: none;
+  border: none;
+  color: #166534;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tags-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  color: #111827;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.tag-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap; /* allow wrapping on narrow screens */
+  min-width: 0;
+}
+
+.tag-circle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.tag-circle.green { background-color: #16a34a; }
+.tag-circle.gray { background-color: #9ca3af; }
+
+.tag-date {
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.tag-price {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.tag-type {
+  white-space: nowrap;
+}
+
+.tag-pill {
+  background-color: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+/* 4. Chat Bubbles */
+.thread-messages-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.chat-bubble {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  /* Removed margin-left/right percentages that caused overflow */
+  max-width: 100%;
+}
+
+.chat-bubble.incoming {
+  background-color: #f3f4f6;
+  color: #111827;
+  /* Previously: margin-right: 20% — removed, use max-width instead */
+  max-width: 88%;
+  align-self: flex-start;
+}
+
+.chat-bubble.outgoing {
+  background-color: #E6F0FF;
+  color: #111827;
+  /* Previously: margin-left: 10% — removed, use max-width + align-self instead */
+  max-width: 92%;
+  align-self: flex-end;
+}
+
+.chat-text {
+  line-height: 1.4;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.chat-time {
+  font-size: 11px;
+  flex-shrink: 0;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
+/* ─── Responsive breakpoint for small phones ─── */
+@media (max-width: 400px) {
+  .thread-card {
+    padding: 12px 12px;
+    gap: 10px;
+  }
+
+  .user-name {
+    font-size: 14px;
+  }
+
+  .chat-bubble {
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+
+  .chat-bubble.incoming {
+    max-width: 94%;
+  }
+
+  .chat-bubble.outgoing {
+    max-width: 96%;
+  }
+}

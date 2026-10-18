@@ -1,0 +1,114 @@
+/* ── Vehicle agreements card ─────────────────────────────────────────────────
+   Fully standalone: every class is prefixed `va-`, nothing here relies on the
+   page's own stylesheet. Layout is mobile-first and widens on larger screens. */
+
+.va-card,
+.va-card *,
+.va-card *::before,
+.va-card *::after { box-sizing: border-box; }
+
+.va-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px;
+  background: #fff;
+  font-family: inherit;
+}
+
+/* Vehicle header */
+.va-vehicle { display: flex; align-items: center; gap: 10px; }
+.va-vehicle-icon { font-size: 18px; flex-shrink: 0; }
+.va-vehicle-info { min-width: 0; }
+.va-vehicle-name { font-size: 14px; font-weight: 700; color: #111827; word-break: break-word; }
+.va-vehicle-desc { font-size: 12px; color: #6b7280; }
+
+/* Saved agreement rows */
+.va-saved-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.va-saved {
+  display: flex; align-items: center; gap: 10px;
+  background: #f9fafb; border: 1px solid #f3f4f6; border-radius: 8px;
+  padding: 8px 10px;
+}
+.va-saved-icon { font-size: 18px; flex-shrink: 0; }
+.va-saved-text { flex: 1; min-width: 0; }
+.va-saved-title { font-size: 13px; font-weight: 600; color: #374151; word-break: break-word; }
+.va-saved-sub { font-size: 12px; color: #16a34a; font-weight: 600; }
+.va-icon-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 14px; padding: 6px; color: #2563eb; line-height: 1;
+  border-radius: 6px; flex-shrink: 0;
+}
+.va-icon-btn:hover { background: #eff6ff; }
+.va-icon-btn.danger { color: #dc2626; }
+.va-icon-btn.danger:hover { background: #fef2f2; }
+
+/* Add buttons: side by side on wide screens, stacked on narrow ones */
+.va-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.va-add-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 14px;
+  border: 1.5px solid #2563eb; background: #fff; color: #2563eb;
+  border-radius: 8px; font-size: 14px; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: background 0.15s;
+}
+.va-add-btn:hover { background: #eff6ff; }
+
+/* Inline form */
+.va-form {
+  margin-top: 12px; padding: 14px;
+  background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 10px;
+}
+.va-form-title { font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 12px; }
+.va-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.va-full { grid-column: 1 / -1; }
+
+.va-label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 5px; }
+.va-input-wrap { position: relative; }
+.va-input,
+.va-textarea {
+  width: 100%; padding: 9px 12px;
+  border: 1px solid #d1d5db; border-radius: 7px;
+  font-size: 13px; font-family: inherit; color: #111827;
+  background: #fff; outline: none;
+}
+.va-textarea { min-height: 60px; resize: vertical; }
+.va-input:focus,
+.va-textarea:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1); }
+
+.va-affix {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  font-size: 13px; color: #6b7280; pointer-events: none;
+}
+.va-affix.left { left: 10px; }
+.va-affix.right { right: 10px; }
+
+/* Form buttons */
+.va-form-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+.va-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 8px 18px; border-radius: 7px;
+  font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
+}
+.va-btn-ghost { background: #fff; border: 1px solid #d1d5db; color: #374151; }
+.va-btn-ghost:hover { background: #f9fafb; }
+.va-btn-primary { background: #2563eb; border: 1px solid #2563eb; color: #fff; }
+.va-btn-primary:hover { background: #1d4ed8; }
+.va-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Phones */
+@media (max-width: 600px) {
+  .va-card { padding: 12px; }
+  .va-form-grid { grid-template-columns: 1fr; }
+  .va-actions { grid-template-columns: 1fr; }
+  .va-add-btn { padding: 13px 14px; font-size: 15px; }
+  .va-saved-title { font-size: 14px; }
+  .va-label { font-size: 13px; }
+  /* 16px stops iOS Safari from zooming in when a field is focused */
+  .va-input, .va-textarea { font-size: 16px; padding: 11px 12px; }
+  .va-form-btns > .va-btn { flex: 1; padding: 12px; font-size: 15px; }
+}

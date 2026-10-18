@@ -1,0 +1,297 @@
+/* Header */
+/* Force all elements inside the modal to respect boundaries */
+.modal-container * {
+  box-sizing: border-box;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #eaecef;
+}
+
+.modal-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0;
+}
+
+.close-btn {
+  background: none; border: none; font-size: 18px; cursor: pointer; color: #718096;
+}
+
+/* Profile Section */
+.modal-profile {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px 10px;
+}
+
+.profile-avatar {
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  background-color: #2F6B43;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 18px;
+  font-weight: bold;
+  margin-right: 16px;
+  flex-shrink: 0;
+}
+
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-name-row h3 {
+  margin: 0; font-size: 18px; font-weight: 700; color: #1a202c;
+}
+
+.profile-phone {
+  font-size: 14px; color: #4a5568; display: flex; align-items: center; gap: 4px;
+}
+
+.profile-email {
+  font-size: 13px; color: #718096; margin-top: 4px;
+}
+
+/* Context Bar */
+.context-bar {
+  margin: 10px 24px;
+  background-color: #f8fafc;
+  border: 1px solid #edf2f7;
+  padding: 12px 16px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #4a5568;
+}
+
+.accordion-toggle {
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2d3748;
+  border-bottom: 1px solid #eaecef;
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+/* Tabs */
+.modal-tabs {
+  display: flex;
+  padding: 0 24px;
+  border-bottom: 1px solid #eaecef;
+  flex-shrink: 0;
+}
+
+.tab {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 14px;
+  font-weight: 600;
+  color: #718096;
+  cursor: pointer;
+}
+
+.tab.active {
+  color: #2b6cb0;
+  border-bottom: 2px solid #2b6cb0;
+}
+
+/* Messages Area */
+.tab-content-messages {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.messages-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  background-color: #ffffff;
+}
+
+.modal-msg-wrapper {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+  max-width: 75%;
+}
+
+.modal-msg-wrapper.incoming { align-items: flex-start; margin-right: auto; }
+.modal-msg-wrapper.outgoing { align-items: flex-end; margin-left: auto; }
+
+.modal-msg-bubble {
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.modal-msg-bubble.incoming {
+  background-color: #f8fafc;
+  color: #1a202c;
+  border: 1px solid #edf2f7;
+  border-bottom-left-radius: 4px;
+}
+
+.modal-msg-bubble.outgoing {
+  background-color: #4285F4;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.modal-msg-time {
+  font-size: 11px;
+  color: #a0aec0;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.read-receipt { color: #4285F4; font-weight: bold; }
+
+/* Message Input */
+.message-input-area {
+  padding: 16px 24px;
+  border-top: 1px solid #eaecef;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.message-input-area input {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+}
+
+.attach-btn { background: none; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; cursor: pointer; }
+.send-btn { 
+  background-color: transparent; 
+  color: #2b6cb0; 
+  border: none; 
+  font-weight: 600; 
+  display: flex; 
+  align-items: center; 
+  gap: 6px; 
+  cursor: pointer; 
+}
+
+/* Call History Table */
+.tab-content-calls {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+.call-filters {
+  display: flex; gap: 12px; margin-bottom: 20px; align-items: center;
+}
+
+.call-filters select, .call-filters input {
+  padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; outline: none;
+}
+
+.clear-btn { color: #2b6cb0; background: none; border: none; font-size: 13px; font-weight: 600; cursor: pointer; margin-left: auto; }
+
+.table-responsive { width: 100%; overflow-x: auto; }
+
+.calls-table {
+  width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;
+}
+
+.calls-table th { color: #718096; padding-bottom: 12px; font-weight: 500; }
+.calls-table td { padding: 12px 0; border-top: 1px solid #edf2f7; color: #2d3748; }
+
+.direction-outgoing { color: #38a169; }
+.direction-incoming { color: #2b6cb0; }
+.direction-missed { color: #e53e3e; }
+
+.action-call-btn {
+  border: 1px solid #cbd5e0; background: white; padding: 6px 12px; border-radius: 4px; color: #4a5568; cursor: pointer; font-size: 12px;
+}
+
+.pagination {
+  display: flex; justify-content: flex-end; align-items: center; padding-top: 20px; font-size: 13px; color: #718096; gap: 8px;
+}
+
+.page-active { color: #2b6cb0; font-weight: bold; }
+
+/* Responsive Adjustments for Mobile */
+@media (max-width: 768px) {
+  
+  /* 1. Reduce chunky desktop padding on mobile to give text room */
+  .modal-header,
+  .modal-profile,
+  .context-bar,
+  .modal-tabs,
+  .messages-scroll-area,
+  .message-input-area,
+  .tab-content-calls {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  /* 2. Fix the message bubbles so they don't break the layout */
+  .modal-msg-wrapper {
+    max-width: 85% !important; /* Allow bubbles to stretch further */
+  }
+
+  .modal-msg-bubble {
+    word-wrap: break-word;
+    word-break: break-word; /* Force long words to wrap to next line */
+    font-size: 13.5px; /* Slightly scale down text for mobile readability */
+  }
+
+  /* 3. Stack the profile info neatly */
+  .modal-profile {
+    align-items: flex-start;
+  }
+  
+  .profile-name-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  /* 4. Fix Call filters from squishing */
+  .call-filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .call-filters select, .call-filters input {
+    width: 100%;
+  }
+
+  .clear-btn {
+    text-align: right;
+    margin-top: -5px;
+  }
+
+  /* 5. Tweak input area so the Send button isn't squished */
+  .message-input-area {
+    gap: 8px;
+  }
+}

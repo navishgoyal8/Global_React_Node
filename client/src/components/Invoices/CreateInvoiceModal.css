@@ -1,0 +1,211 @@
+/* CreateInvoiceModal.css */
+.invoice-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100000;
+  padding: 20px;
+}
+
+.invoice-modal-container {
+  width: 100%;
+  max-width: 1100px;
+  height: 90vh;
+  background-color: #f9fafb;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Header */
+.invoice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background-color: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
+.invoice-header-left { display: flex; align-items: center; gap: 15px; }
+.invoice-header h2 { margin: 0; font-size: 18px; color: #111827; display: flex; align-items: center; gap: 8px; }
+.invoice-header-actions { display: flex; gap: 10px; }
+
+/* Buttons */
+.btn-outline { padding: 8px 16px; border: 1px solid #d1d5db; background: white; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; }
+.btn-primary-blue { padding: 8px 16px; background-color: #2563eb; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; }
+.btn-green { padding: 10px 20px; background-color: #059669; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.btn-outline-green { width: 100%; padding: 10px; background-color: #f0fdf4; color: #059669; border: 1px solid #059669; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: background-color 0.2s; }
+.btn-outline-green:hover { background-color: #dcfce7; }
+
+/* Body & Grid */
+.invoice-body { flex: 1; overflow-y: auto; padding: 24px; }
+.invoice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+/* Panels */
+.invoice-panel { background-color: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
+.invoice-panel h3 { margin: 0 0 16px 0; font-size: 15px; color: #1f2937; display: flex; justify-content: space-between; align-items: center; }
+
+/* Form Elements */
+.inv-form-group { margin-bottom: 16px; }
+.inv-form-group label { display: block; font-size: 12px; font-weight: 600; color: #4b5563; margin-bottom: 6px; }
+.inv-form-control { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+.inv-row { display: flex; gap: 12px; }
+.inv-row .inv-form-group { flex: 1; }
+
+/* UI Extras (Tabs, Pills, Icons) */
+.inv-tabs { display: flex; border-bottom: 1px solid #e5e7eb; margin-bottom: 20px; }
+.inv-tab { flex: 1; text-align: center; padding: 10px; font-size: 13px; font-weight: 600; color: #6b7280; cursor: pointer; border-bottom: 2px solid transparent; }
+.inv-tab.active { color: #059669; border-bottom-color: #059669; }
+
+.icon-circle { width: 40px; height: 40px; background-color: #059669; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; flex-shrink: 0; }
+
+.inv-pill { display: inline-flex; align-items: center; gap: 6px; background-color: #f3f4f6; padding: 4px 10px; border-radius: 16px; font-size: 12px; font-weight: 600; color: #374151; margin-right: 8px; margin-top: 8px; }
+
+.custom-select-box { border: 1px solid #d1d5db; border-radius: 6px; padding: 10px 12px; cursor: pointer; }
+
+/* Summary Section */
+.summary-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; color: #4b5563; }
+.summary-total { font-weight: bold; color: #111827; font-size: 16px; border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 8px; }
+
+/* Toggle Switch */
+.toggle-switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #d1d5db; transition: .3s; border-radius: 20px; }
+.slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; }
+input:checked + .slider { background-color: #059669; }
+input:checked + .slider:before { transform: translateX(16px); }
+
+/* Footer */
+.invoice-footer { padding: 16px 24px; background-color: #fff; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+.footer-actions-right { display: flex; gap: 12px; }
+
+/* Dropdown Menu Items */
+.dropdown-item {
+  padding: 10px 16px;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  color: #374151;
+  transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+  background-color: #f3f4f6;
+}
+
+.inv-panel-header {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+}
+ 
+.inv-panel-header:hover {
+  opacity: 0.8;
+}
+ 
+.inv-collapse-icon {
+  display: inline-block;
+  transition: transform 0.3s ease;
+  font-weight: bold;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* =========================================
+   📱 MOBILE RESPONSIVENESS (Max Width: 768px)
+   ========================================= */
+@media (max-width: 768px) {
+  /* 1. Make the modal slightly smaller than the screen to keep it centered */
+  .invoice-modal-container {
+    height: 95vh;
+    max-width: 95vw;
+    border-radius: 12px; /* Bring back the rounded corners */
+  }
+
+  /* Stack the left and right columns vertically */
+  .invoice-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* --- HEADER OVERRIDES --- */
+  .invoice-header {
+    flex-direction: column;
+    align-items: center; /* Center the header text */
+    gap: 12px;
+    padding: 16px;
+  }
+  
+  /* 2. Make top buttons smaller and sit neatly together */
+  .invoice-header-actions {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .invoice-header-actions button {
+    padding: 6px 10px; /* Smaller padding */
+    font-size: 12px;   /* Smaller font */
+    flex: 1;           /* Makes them equal width */
+    text-align: center;
+  }
+
+  /* --- BODY & FORM OVERRIDES --- */
+  .invoice-body {
+    padding: 12px;
+  }
+  
+  .invoice-panel {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  /* Stack the side-by-side form inputs vertically */
+  .inv-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .inv-row .inv-form-group {
+    margin-bottom: 0; 
+  }
+
+  /* --- FOOTER OVERRIDES --- */
+  .invoice-footer {
+    flex-direction: column-reverse; /* Puts Cancel at the bottom */
+    gap: 8px; /* Tighter spacing */
+    padding: 16px;
+  }
+
+  .footer-actions-right {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Tighter spacing */
+  }
+
+  /* 3. Slim down the bottom buttons */
+  .footer-actions-right button, 
+  .invoice-footer > button {
+    width: 100%;
+    padding: 8px; /* Much smaller padding */
+    font-size: 13px; /* Smaller font */
+  }
+}

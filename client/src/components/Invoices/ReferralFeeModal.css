@@ -1,0 +1,24 @@
+/* Extras for the referral popup. The base look (overlay, fields, buttons,
+   responsive breakpoints) comes from ConsignmentAgreementModal.css, which the
+   component imports first. Keep that import order. */
+
+/* A narrower popup: this form has fewer columns than the consignment one */
+.cm-modal.rf-modal { max-width: 780px; }
+
+/* "Send Agreement To": options stacked vertically */
+.cm-radios.rf-stack { flex-direction: column; align-items: flex-start; gap: 14px; min-height: 0; padding-top: 4px; }
+
+/* Payment status select with a coloured dot on the left */
+.rf-status { position: relative; }
+.rf-dot {
+  position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+  width: 10px; height: 10px; border-radius: 50%; pointer-events: none; z-index: 1;
+}
+.rf-status .cm-select { padding-left: 32px; }
+
+/* Phones: this popup only has 2-column grids, so they collapse to one column
+   at the same 440px breakpoint the consignment popup uses. Radios in a row
+   (Buyer / Seller) stay on one line. */
+@media (max-width: 440px) {
+  .cm-modal.rf-modal { max-width: 100%; }
+}

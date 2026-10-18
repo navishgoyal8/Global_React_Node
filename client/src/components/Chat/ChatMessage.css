@@ -1,0 +1,65 @@
+/* src/components/Chat/ChatMessage.css */
+
+.chat-block {
+  /* Shrink from 100% to 85% so there is room to align left or right */
+  width: 85%; 
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 8px;
+}
+
+/* INCOMING MESSAGE (Left Side, Grey) */
+.chat-block.incoming {
+  background-color: #E8EBEF; 
+  color: #222222;
+  margin-right: auto; /* This pushes the bubble to the LEFT */
+  border-bottom-left-radius: 2px; /* Gives it a little chat bubble tail */
+}
+
+/* OUTGOING REPLY (Right Side, Green) */
+.chat-block.outgoing {
+  background-color: #11592A !important; /* Forces the green color */
+  color: #ffffff !important;
+  margin-left: auto; /* This pushes the bubble to the RIGHT */
+  border-bottom-right-radius: 2px;
+}
+
+/* Text and Layout */
+.message-content {
+  flex: 1;
+  padding-right: 15px; 
+}
+
+/* Name Tags (Optional, but keeps things clean) */
+.message-name {
+  font-weight: 700;
+  margin-right: 8px;
+}
+
+/* Makes sure the name tag is white inside the green bubble */
+.chat-block.outgoing .message-name {
+  color: #ffffff; 
+}
+
+.chat-block.incoming .message-name {
+  color: #001f88;
+}
+
+/* Timestamp on the far right */
+.message-time {
+  font-size: 11px;
+  opacity: 0.8;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.read-ticks {
+  margin-left: 4px;
+  letter-spacing: -2px;
+  color: #a3d9a5; /* Light green ticks to look nice against the dark green background */
+}

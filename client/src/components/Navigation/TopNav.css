@@ -1,0 +1,141 @@
+/* =============================================
+   TOP NAV CONTAINER
+   ============================================= */
+.top-nav-container {
+  background-color: #1e1b2e;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  gap: 4px;
+}
+
+/* Hide scrollbar on the tabs scroll area */
+.top-nav-tabs-scroll {
+  display: flex;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  gap: 4px;
+  align-items: center;
+}
+
+.top-nav-tabs-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* =============================================
+   NAV ITEMS
+   ============================================= */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;       /* ← bigger */
+  white-space: nowrap;
+  color: #a89fc8;
+  font-size: 14px;          /* ← bigger */
+  font-weight: 500;
+  border-radius: 10px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+.nav-item:hover {
+  color: #e2dff0;
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
+.nav-item.active-tab {
+  background-color: #ffffff;
+  color: #1e1b2e;
+  font-weight: 700;
+  border-radius: 10px;
+}
+
+.nav-icon {
+  font-size: 16px;          /* ← bigger */
+}
+
+.nav-label {
+  font-size: 14px;          /* ← bigger */
+}
+
+/* =============================================
+   INVOICES BUTTON
+   ============================================= */
+.invoices-btn-wrapper {
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+.invoices-nav-btn {
+  background-color: transparent;
+  color: #e2dff0;
+  border: 1px solid #4a4570;
+  padding: 10px 18px;       /* ← bigger */
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;          /* ← bigger */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.invoices-nav-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: #7c6fa0;
+  color: #ffffff;
+}
+
+.invoices-btn-icon {
+  font-size: 16px;          /* ← bigger */
+  flex-shrink: 0;
+}
+
+/* =============================================
+   📱 MOBILE — icon-only Invoices button
+   ============================================= */
+@media (max-width: 640px) {
+
+  .top-nav-container {
+    padding: 8px 6px;
+  }
+
+  .nav-item {
+    padding: 8px 12px;
+    gap: 4px;
+    font-size: 13px;
+  }
+
+  .nav-label {
+    font-size: 12px;
+  }
+
+  .nav-icon {
+    font-size: 14px;
+  }
+
+  .invoices-btn-wrapper {
+    padding: 0 4px;
+  }
+
+  .invoices-nav-btn {
+    padding: 8px 10px;
+    font-size: 13px;
+    gap: 0;
+  }
+
+  .invoices-btn-label {
+    display: none;
+  }
+}

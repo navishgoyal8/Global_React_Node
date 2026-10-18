@@ -1,0 +1,36 @@
+/* variables.css */
+:root {
+  /* Theme Colors */
+  --color-dark-blue: #0A1931;
+  --color-charcoal-grey: #2C3539;
+  --color-pure-white: #FFFFFF;
+  --color-soft-white: #FDFDFD;
+  --color-light-grey: #F4F6F8;
+  --color-border-grey: #EAECEF;
+  
+  /* Text Colors */
+  --text-color-dark: #121212;
+  --text-color-medium: #555555;
+  --text-color-light: #AAAAAA;
+
+  /* Specific Design Colors (Badges, Buttons) */
+  --color-status-buyer: #EAE6FF; /* Very light purple */
+  --color-status-buyer-text: #4C28A1; /* Purple text */
+  --color-status-vendor: #F0F9FF; /* Very light blue */
+  --color-status-vendor-text: #1971C2; /* Blue text */
+  --color-status-seller: #FFE8E6; /* Very light red */
+  --color-status-seller-text: #BF2116; /* Red text */
+  --color-action-button: #007bff; /* Primary Action Blue */
+  --color-unanswered: #FFEDED; /* Pink */
+  
+  /* Standardized Chat Colors */
+  --chat-incoming-bubble: #F1F3F5; /* Light Gray */
+  --chat-outgoing-bubble: #28A745; /* Green */
+  --chat-incoming-text: #121212; /* Dark Text */
+  --chat-outgoing-text: #FFFFFF; /* White Text */
+
+  /* Layout Constants */
+  --nav-height: 60px;
+  --footer-height: 70px;
+  --max-content-width: 1440px;
+}
