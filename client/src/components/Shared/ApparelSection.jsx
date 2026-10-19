@@ -245,11 +245,12 @@ const mapDbProduct = (p) => {
 };
 
 // ── APPAREL STOREFRONT SECTION (Global Customs, backed by DB) ──────────────
-export default function ApparelSection({ cart = [], handleApparelAdd, handleCustomTeeAdd, goToCart }) {
+export default function ApparelSection({ cart = [], handleApparelAdd, handleCustomTeeAdd, goToCart, embedded = false }) {
   const [activeCategory, setActiveCategory] = useState('shirts');
   const [page, setPage] = useState(1);
   const [favorites, setFavorites] = useState(new Set());
-  const [products, setProducts] = useState(PRODUCTS);
+  const [products, setProducts] = useState([]);
+  const [isLoading,setIsLoading] = useState(true)
   const [selected, setSelected] = useState(null);
   const [configuring, setConfiguring] = useState(null);
 
@@ -265,20 +266,24 @@ export default function ApparelSection({ cart = [], handleApparelAdd, handleCust
           const mapped = items
             .filter(p => Number(p.category_id) === 5)
             .map(mapDbProduct);
-          if (!cancelled && mapped.length) setProducts(mapped);
+          if (!cancelled  ) setProducts(mapped.length ? mapped : PRODUCTS);
         }
       } catch (err) {
         console.error('Failed to load apparel products:', err);
+        if(!cancelled) setProducts(PRODUCTS)
+      }
+      finally{
+        if(!cancelled) setIsLoading(false)
       }
     };
     loadApparel();
     return () => { cancelled = true; };
   }, []);
 
-  const filtered = useMemo(
-    () => products.filter(p => p.category === activeCategory),
-    [products, activeCategory]
-  );
+     const filtered = useMemo(
+    () => embedded ? products : products.filter(p => p.category === activeCategory),
+    [products, activeCategory, embedded]
+   );
 
   const categoryCounts = useMemo(() => {
     const counts = {};
@@ -287,7 +292,7 @@ export default function ApparelSection({ cart = [], handleApparelAdd, handleCust
   }, [products]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const pageItems = embedded ? filtered : filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const selectCategory = (id) => { setActiveCategory(id); setPage(1); };
   const navigate = useNavigate();
@@ -357,10 +362,12 @@ export default function ApparelSection({ cart = [], handleApparelAdd, handleCust
   .ap-card-price { margin-top: 8px; font-size: 16px; font-weight: 700; letter-spacing: -0.01em; color: #0f172a; }
       `}</style>
 
-      <div style={{ maxWidth: '1152px', margin: '0 auto', padding: '24px 20px' }}>
+      <div style={{ maxWidth: embedded ? 'none' : '1152px', margin: '0 auto', padding: embedded ? '0' : '24px 20px' }}>
 
         {/* ── GC Brand banner ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+        {
+          !embedded && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
           <div style={{ width: '44px', height: '44px', borderRadius: '10px', border: '2px solid #f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', flexShrink: 0 }}>
             <span style={{ color: '#f97316', fontWeight: 800, fontSize: '15px', letterSpacing: '-0.02em' }}>GC</span>
           </div>
@@ -373,8 +380,12 @@ export default function ApparelSection({ cart = [], handleApparelAdd, handleCust
             </div>
           </div>
         </div>
+          )
+        }
+        
 
         {/* ── Shop by category ── */}
+        {!embedded && (<>
         <section style={{ marginBottom: '28px' }}>
           <h1 className='ap-heading' style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 14px 0', letterSpacing: '-0.02em' }}>Shop by Category</h1>
           <div className="apparel-cat-grid">
@@ -412,6 +423,8 @@ export default function ApparelSection({ cart = [], handleApparelAdd, handleCust
         </section>
 
         <hr style={{ border: 'none', borderTop: `1px solid ${C.border}`, margin: '0 0 24px 0' }} />
+         </>
+        )} 
 
         {/* ── All products ── */}
         <section>
@@ -448,40 +461,69 @@ export default function ApparelSection({ cart = [], handleApparelAdd, handleCust
           </div>
 
           {/* Product grid */}
-          <div className="apparel-prod-grid">
+          <div className="product-grid">
             {pageItems.map(product => {
               const isFav = favorites.has(product.id);
               return (
-                <div
-                  key={product.id}
-                  onClick={() => openDetail(product)}
-                  style={{ borderRadius: '12px', border: `1px solid ${C.border}`, padding: '12px 16px', position: 'relative', transition: 'box-shadow 0.2s', cursor: 'pointer' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 6px 20px rgba(15,23,42,0.08)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
-                >
-                  <button
-                    onClick={(e) => { e.stopPropagation(); toggleFavorite(product.id); }}
-                    aria-label="Toggle favorite"
-                    style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10, background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <HeartIcon filled={isFav} />
-                  </button>
 
-                  <ProductThumb product={product} />
+                <div key={product.id} className="product-card">
+                  <div className="card-top">
+                    <div></div>
+                    <button
+                      className="wishlist-btn"
+                      onClick={(e) => { e.stopPropagation(); toggleFavorite(product.id); }}
+                      aria-label="Toggle favorite"
+                      style={{ borderColor: isFav ? '#ef4444' : '', backgroundColor: isFav ? '#fef2f2' : 'white', color: isFav ? '#ef4444' : '#9ca3af' }}
+                    >
+                      <HeartIcon filled={isFav} color={isFav ? '#ef4444' : '#9ca3af'} />
+                    </button>
+                  </div>
 
+                  {product.image ? (
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="product-image"
+                      onClick={() => openDetail(product)}
+                      onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/300x300/f3f4f6/9ca3af?text=No+Img'; }}
+                    />
+                  ) : (
+                    <div onClick={() => openDetail(product)} style={{ cursor: 'pointer' }}><ProductThumb product={product} /></div>
+                  )}
 
-                  <div style={{ marginTop: '12px' }}>
-                    <div className="ap-card-name">{product.name}</div>
-                    <ColorDots product={product} />
+                  <div className="product-title" onClick={() => openDetail(product)} style={{ cursor: 'pointer' }}>{product.name}</div>
+                  <div className="product-category">Apparel</div>
+
+                  <div className="mini-filters">
+                    <div className="mini-filter-row">
+                      <span className="mini-filter-label">Colors</span>
+                      <ColorDots product={product} />
+                    </div>
                     {product.listDescription && (
-                      <div className="ap-card-desc">{product.listDescription}</div>
+                      <div className="product-desc" onClick={() => openDetail(product)} title={product.listDescription} style={{ marginTop: '10px' }}>{product.listDescription}</div>
                     )}
-                    <div className="ap-card-price">${product.price.toFixed(2)}</div>
-                  </div>         </div>
-              );
+                  </div>
+
+                  <div className="card-bottom" style={{ marginTop: '16px' }}>
+                    <div className="price-row">
+                      {product.originalPrice && <span className="original-price">${product.originalPrice.toFixed(2)}</span>}
+                      <span className="current-price">${product.price.toFixed(2)}</span>
+                    </div>
+                    <div className="action-row">
+                      <button className="btn-add-cart" onClick={() => openDetail(product)}>View</button>
+                    </div>
+                  </div>
+                </div>
+               );
             })}
 
-            {pageItems.length === 0 && (
+            {isLoading && (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#6b7280', padding: '64px 0' }}>
+                Loading products…
+              </div>
+            )}
+
+            {!isLoading && pageItems.length === 0 && (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: C.faint, padding: '64px 0' }}>
                 No products in this category yet.
               </div>
@@ -489,7 +531,7 @@ export default function ApparelSection({ cart = [], handleApparelAdd, handleCust
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
+          {!embedded && totalPages > 1 && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '32px' }}>
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}

@@ -56,6 +56,11 @@ function App() {
         />
 
         <Route 
+          path="/sales/crm/all" 
+          element={<Storefront />} 
+        />
+
+        <Route 
           path="/sales/crm/seat-covers" 
           element={<Storefront />} 
         />

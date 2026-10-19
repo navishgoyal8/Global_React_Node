@@ -222,13 +222,13 @@ const FilterPanel = ({
 
   const hasFilters = filterMakes.length || filterBuilders.length || filterModels.length || filterCategories.length || filterYear;
 
-const clearAll = () => {
-  setFilterMakes([]);
-  setFilterBuilders([]);
-  setFilterModels([]);
-  setFilterCategories([]);
-  setFilterYear(''); // NEW
-};
+  const clearAll = () => {
+    setFilterMakes([]);
+    setFilterBuilders([]);
+    setFilterModels([]);
+    setFilterCategories([]);
+    setFilterYear(''); // NEW
+  };
 
   // When Make changes, auto-clear any models that no longer belong to the selected makes
   const handleMakeChange = (newMakes) => {
@@ -268,23 +268,23 @@ const clearAll = () => {
 
   // NEW: build a sorted list of years actually covered by any product's fitments
   const availableYears = (() => {
-  let min = null, max = null;
-  products.forEach(p => {
-    (p.fitments || []).forEach(f => {
-      if (f.year_start) {
-        const y = parseInt(f.year_start, 10);
-        if (min === null || y < min) min = y;
-      }
-      if (f.year_end) {
-        const y = parseInt(f.year_end, 10);
-        if (max === null || y > max) max = y;
-      }
+    let min = null, max = null;
+    products.forEach(p => {
+      (p.fitments || []).forEach(f => {
+        if (f.year_start) {
+          const y = parseInt(f.year_start, 10);
+          if (min === null || y < min) min = y;
+        }
+        if (f.year_end) {
+          const y = parseInt(f.year_end, 10);
+          if (max === null || y > max) max = y;
+        }
+      });
     });
-  });
-  if (min === null || max === null) return [];
-  const years = [];
-  for (let y = max; y >= min; y--) years.push(y); // newest first
-  return years;
+    if (min === null || max === null) return [];
+    const years = [];
+    for (let y = max; y >= min; y--) years.push(y); // newest first
+    return years;
   })();
 
   const handleAddCat = () => {
@@ -443,19 +443,22 @@ const Storefront = () => {
   const navigate = useNavigate();
   const productId = searchParams.get('id');
 
-  // URL Tab Logic - if the URL is /apparel, force the apparel tab
-  const isApparelRoute = location.pathname.includes('/sales/crm/apparel');
-  const activeTab = isApparelRoute ? 'apparel' : (searchParams.get('tab') || 'covers');
+  const path = location.pathname
+  const activeTab = path.includes('/sales/crm/apparel') ? 'apparel'
+    : path.endsWith('/sales/crm/all') ? 'all'
+      : 'covers';
 
   const handleTabChange = (tabId) => {
-    if (tabId === 'apparel') {
-      navigate('/sales/crm/apparel');
-    } else if (tabId === 'all') {
-      navigate('/sales/crm/seat-covers?tab=all');
-    } else {
-      navigate('/sales/crm/seat-covers');
-    }
+    if (tabId === 'apparel') navigate('/sales/crm/apparel');
+    else if (tabId === 'all') navigate('/sales/crm/all');
+    else navigate('/sales/crm/seat-covers');
   };
+
+  useEffect(() => {
+    if (path.endsWith('/sales/crm/seat-covers') && searchParams.get('tab') === 'all') {
+      navigate('/sales/crm/all', { replace: true });
+    }
+  }, [path, searchParams, navigate]);
 
   const [cart, setCart] = useState(() => {
     const saved = localStorage.getItem('seatcover_cart');
@@ -475,7 +478,7 @@ const Storefront = () => {
   const [filterBuilders, setFilterBuilders] = useState([]);
   const [filterModels, setFilterModels] = useState([]);
   const [filterCategories, setFilterCategories] = useState([]);
-  const [filterYear,       setFilterYear]       = useState('');
+  const [filterYear, setFilterYear] = useState('');
 
   // ── DYNAMIC DB STATE ──
   const [masterFilters, setMasterFilters] = useState({ makes: [], models: [], categories: [], builders: [] });
@@ -598,51 +601,51 @@ const Storefront = () => {
 
   // ── FILTER LOGIC ──
   const filteredProducts = products.filter(p => {
-  // Only show seat covers in the seat-cover grid (apparel is rendered via ApparelSection)
-  if ((p.category_name || '').toLowerCase() === 'apparel' || (p.category || '').toLowerCase() === 'apparel') {
-    return false;
-  }
-  if (filterMakes.length) {
-    const matchesMake = p.fitments.some(f => filterMakes.includes(f.make_name));
-    if (!matchesMake) return false;
-  }
-  if (filterBuilders.length) {
-  const matchesBuilder = p.fitments.some(f => filterBuilders.includes(f.builder_name));
-  if (!matchesBuilder) return false;
-}
-  if (filterModels.length) {
-    const matchesModel = p.fitments.some(f => filterModels.includes(f.model_name));
-    if (!matchesModel) return false;
-  }
-  if (filterCategories.length) {
-    const matchesCat = filterCategories.some(c =>
-      p.category?.toLowerCase().includes(c.toLowerCase())
-    );
-    if (!matchesCat) return false;
-  }
-  // NEW: Year filter — matches if ANY fitment's range includes the selected year
-  // A fitment with no year range set is treated as "fits all years"
-  if (filterYear) {
-    const year = parseInt(filterYear, 10);
-    const matchesYear = p.fitments.some(f => {
-      const start = f.year_start ? parseInt(f.year_start, 10) : null;
-      const end   = f.year_end   ? parseInt(f.year_end, 10)   : null;
-      if (!start && !end) return true; // no range = unrestricted fitment
-      if (start && year < start) return false;
-      if (end && year > end) return false;
-      return true;
-    });
-    if (!matchesYear) return false;
-  }
-  return true;
-});
+    // Only show seat covers in the seat-cover grid (apparel is rendered via ApparelSection)
+    if ((p.category_name || '').toLowerCase() === 'apparel' || (p.category || '').toLowerCase() === 'apparel') {
+      return false;
+    }
+    if (filterMakes.length) {
+      const matchesMake = p.fitments.some(f => filterMakes.includes(f.make_name));
+      if (!matchesMake) return false;
+    }
+    if (filterBuilders.length) {
+      const matchesBuilder = p.fitments.some(f => filterBuilders.includes(f.builder_name));
+      if (!matchesBuilder) return false;
+    }
+    if (filterModels.length) {
+      const matchesModel = p.fitments.some(f => filterModels.includes(f.model_name));
+      if (!matchesModel) return false;
+    }
+    if (filterCategories.length) {
+      const matchesCat = filterCategories.some(c =>
+        p.category?.toLowerCase().includes(c.toLowerCase())
+      );
+      if (!matchesCat) return false;
+    }
+    // NEW: Year filter — matches if ANY fitment's range includes the selected year
+    // A fitment with no year range set is treated as "fits all years"
+    if (filterYear) {
+      const year = parseInt(filterYear, 10);
+      const matchesYear = p.fitments.some(f => {
+        const start = f.year_start ? parseInt(f.year_start, 10) : null;
+        const end = f.year_end ? parseInt(f.year_end, 10) : null;
+        if (!start && !end) return true; // no range = unrestricted fitment
+        if (start && year < start) return false;
+        if (end && year > end) return false;
+        return true;
+      });
+      if (!matchesYear) return false;
+    }
+    return true;
+  });
 
   // ── ACTIONS ──
   const goHome = () => { searchParams.delete('id'); setSearchParams(searchParams); window.scrollTo(0, 0); };
-  const goToProduct = (id) => { 
+  const goToProduct = (id) => {
     searchParams.set('id', id);
     setSearchParams(searchParams);
-    window.scrollTo(0, 0); 
+    window.scrollTo(0, 0);
   };
   const goToCart = () => { navigate('/sales/crm/cart'); window.scrollTo(0, 0); };
   const toggleWishlist = (id) => setWishlist(prev => ({ ...prev, [id]: !prev[id] }));
@@ -1062,79 +1065,130 @@ const Storefront = () => {
             ))}
           </div>
 
-          {activeTab === 'apparel' ? (
+          {activeTab === 'apparel' && (
             <ApparelSection cart={cart} handleApparelAdd={handleApparelAdd} handleCustomTeeAdd={handleCustomTeeAdd} goToCart={goToCart} />
-          ) : (
-          <>
-          <div className="hero-section">
-            <div className="hero-content">
-              <h2>Premium Comfort.<br />Every Journey.</h2>
-              <p>High quality seat covers for<br />bus & coach seats.</p>
-              <button className="btn-primary">Shop Now →</button>
-            </div>
-          </div>
+          )}
 
-          {/* ── NEW ADVANCED FILTERS ── */}
-          <FilterPanel
-            filterMakes={filterMakes} setFilterMakes={setFilterMakes}
-            filterBuilders={filterBuilders} setFilterBuilders={setFilterBuilders}
-            filterModels={filterModels} setFilterModels={setFilterModels}
-            filterCategories={filterCategories} setFilterCategories={setFilterCategories}
-            filterYear={filterYear}             setFilterYear={setFilterYear}
-            masterFilters={masterFilters} products={products}
-          />
-
-          <div className="grid-header" style={{ marginTop: '20px' }}>
-            <span>{filteredProducts.length} Products Found</span>
-            <div className="sort-dropdown">Sort by: <strong>Popular ⌄</strong></div>
-          </div>
-
-          <div className="product-grid">
-            {isLoading ? (
-              <div style={{ padding: '40px', width: '100%', textAlign: 'center', gridColumn: '1 / -1', color: '#6b7280' }}>
-                Loading products…
+          {activeTab === 'covers' && (
+            <>
+              <div className="hero-section">
+                <div className="hero-content">
+                  <h2>Premium Comfort.<br />Every Journey.</h2>
+                  <p>High quality seat covers for<br />bus & coach seats.</p>
+                  <button className="btn-primary">Shop Now →</button>
+                </div>
               </div>
-            ) : filteredProducts.length === 0 ? (
-              <div style={{ padding: '60px 20px', width: '100%', textAlign: 'center', gridColumn: '1 / -1', color: '#6b7280', background: '#f8fafc', borderRadius: '16px', border: '1px dashed #e2e8f0' }}>
-                <div style={{ fontSize: '16px', fontWeight: 700, color: '#1e293b', marginBottom: '8px' }}>No exact matches found</div>
-                <div style={{ fontSize: '14px' }}>Try adjusting your filters to see more seat covers.</div>
-                <button
-                  onClick={() => {
-                    setFilterMakes([]);
-                    setFilterBuilders([]);
-                    setFilterModels([]);
-                    setFilterCategories([]);
-                    setFilterYear('');
-                  }}
-                  style={{ marginTop: '16px', background: '#fff', border: '1.5px solid #cbd5e1', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, color: '#334155' }}>
-                  Clear All Filters
-                </button>
+
+              {/* ── NEW ADVANCED FILTERS ── */}
+              <FilterPanel
+                filterMakes={filterMakes} setFilterMakes={setFilterMakes}
+                filterBuilders={filterBuilders} setFilterBuilders={setFilterBuilders}
+                filterModels={filterModels} setFilterModels={setFilterModels}
+                filterCategories={filterCategories} setFilterCategories={setFilterCategories}
+                filterYear={filterYear} setFilterYear={setFilterYear}
+                masterFilters={masterFilters} products={products}
+              />
+
+              {/* {activeTab === 'all' ? (
+                <div className="section-head" style={{ marginTop: 20 }}>
+                  <div>
+                    <h2>Seat Covers</h2>
+                    <span>{filteredProducts.length} products</span>
+                  </div>
+                  <button className="section-link" onClick={() => handleTabChange('covers')}>View all seat covers →</button>
+                </div>
+              ) : (
+                <div className="grid-header" style={{ marginTop: 20 }}>
+                  <span>{filteredProducts.length} Products Found</span>
+                  <div className="sort-dropdown">Sort by: <strong>Popular ⌄</strong></div>
+                </div>
+              )} */}
+
+              <div className="grid-header" style={{ marginTop: 20 }}>
+                <span>{filteredProducts.length} Products Found</span>
+                <div className="sort-dropdown">Sort by: <strong>Popular ⌄</strong></div>
               </div>
-            ) : (
-              filteredProducts.map(product => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  wishlist={wishlist}
-                  getVariantQty={getVariantQty}
-                  handleUpdateQty={handleUpdateQty}
-                  toggleWishlist={toggleWishlist}
-                  handleAddToCart={handleAddToCart}
-                  onClickImage={() => goToProduct(product.id)}
-                />
-              ))
-            )}
-          </div>
+
+              <div className="product-grid">
+                {isLoading ? (
+                  <div style={{ padding: '40px', width: '100%', textAlign: 'center', gridColumn: '1 / -1', color: '#6b7280' }}>
+                    Loading products…
+                  </div>
+                ) : filteredProducts.length === 0 ? (
+                  <div style={{ padding: '60px 20px', width: '100%', textAlign: 'center', gridColumn: '1 / -1', color: '#6b7280', background: '#f8fafc', borderRadius: '16px', border: '1px dashed #e2e8f0' }}>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#1e293b', marginBottom: '8px' }}>No exact matches found</div>
+                    <div style={{ fontSize: '14px' }}>Try adjusting your filters to see more seat covers.</div>
+                    <button
+                      onClick={() => {
+                        setFilterMakes([]);
+                        setFilterBuilders([]);
+                        setFilterModels([]);
+                        setFilterCategories([]);
+                        setFilterYear('');
+                      }}
+                      style={{ marginTop: '16px', background: '#fff', border: '1.5px solid #cbd5e1', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, color: '#334155' }}>
+                      Clear All Filters
+                    </button>
+                  </div>
+                ) : (
+                  filteredProducts.map(product => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      wishlist={wishlist}
+                      getVariantQty={getVariantQty}
+                      handleUpdateQty={handleUpdateQty}
+                      toggleWishlist={toggleWishlist}
+                      handleAddToCart={handleAddToCart}
+                      onClickImage={() => goToProduct(product.id)}
+                    />
+                  ))
+                )}
+              </div>
+
+              {/* {activeTab === 'all' && (
+                <section className="all-apparel">
+                  <div className="section-head">
+                    <div>
+                      <h2>Apparel</h2>
+                      <span>Custom apparel, embroidery &amp; uniforms</span>
+                    </div>
+                    <button className="section-link" onClick={() => handleTabChange('apparel')}>View all apparel →</button>
+                  </div>
+                  <ApparelSection embedded cart={cart} handleApparelAdd={handleApparelAdd} handleCustomTeeAdd={handleCustomTeeAdd} goToCart={goToCart} />
+                </section>
+              )} */}
+                        </>
+           )}
 
           {activeTab === 'all' && (
-            <div style={{ marginTop: '40px', borderTop: `1px solid ${PALETTE.border}`, paddingTop: '8px' }}>
-              <ApparelSection cart={cart} handleApparelAdd={handleApparelAdd} handleCustomTeeAdd={handleCustomTeeAdd} goToCart={goToCart} />
-            </div>
+            <>
+              <div className="product-grid">
+                {isLoading ? (
+                  <div style={{ padding: '40px', width: '100%', textAlign: 'center', gridColumn: '1 / -1', color: '#6b7280' }}>
+                    Loading products…
+                  </div>
+                ) : (
+                  filteredProducts.map(product => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      wishlist={wishlist}
+                      getVariantQty={getVariantQty}
+                      handleUpdateQty={handleUpdateQty}
+                      toggleWishlist={toggleWishlist}
+                      handleAddToCart={handleAddToCart}
+                      onClickImage={() => goToProduct(product.id)}
+                    />
+                  ))
+                )}
+              </div>
+
+              <ApparelSection embedded cart={cart} handleApparelAdd={handleApparelAdd} handleCustomTeeAdd={handleCustomTeeAdd} goToCart={goToCart} />
+            </>
           )}
-          </>
-        )}
-        </div>
-      )}
+         </div>
+       )}
 
       {/* Trust Badges (detail page only) */}
       {viewingProduct && (
