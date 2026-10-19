@@ -336,7 +336,7 @@ const CartPage = () => {
       <header className="cart-header">
         <div
           className="cart-brand"
-          onClick={() => navigate('/sales/crm/seat-covers')}
+          onClick={() => navigate('/sales/crm/all')}
         >
           <div className="brand-icon">
             <CartIcon size={20} />
@@ -374,7 +374,7 @@ const CartPage = () => {
             <div className="section-header">
               <h2>Your Cart <span className="item-count-badge">{totalItemCount}</span></h2>
               <div className="header-actions">
-                <button className="continue-link" onClick={() => navigate('/sales/crm/seat-covers')}>
+                <button className="continue-link" onClick={() => navigate('/sales/crm/all')}>
                   <ArrowLeftIcon size={13} /> Continue Shopping
                 </button>
                 {cart.length > 0 && (
@@ -396,7 +396,7 @@ const CartPage = () => {
                 <h3>Your cart is empty</h3>
                 <p>Looks like you haven't added anything yet.</p>
                 <button
-                  onClick={() => navigate('/sales/crm/seat-covers')}
+                  onClick={() => navigate('/sales/crm/all')}
                   className="btn-continue-shopping"
                 >
                   Continue Shopping
@@ -490,7 +490,7 @@ const CartPage = () => {
                                 <EditIcon size={14} />
                                 <span>Edit design</span>
                               </button>
-                              <button className="action-btn" onClick={() => navigate('/sales/crm/seat-covers')}>
+                              <button className="action-btn" onClick={() => navigate('/sales/crm/all')}>
                                 <SearchIcon size={14} />
                                 <span>Shop More</span>
                               </button>
@@ -586,7 +586,7 @@ const CartPage = () => {
                                 <HeartOutlineIcon size={14} />
                                 <span>Save</span>
                               </button>
-                              <button className="action-btn" onClick={() => navigate('/sales/crm/seat-covers')}>
+                              <button className="action-btn" onClick={() => navigate('/sales/crm/all')}>
                                 <SearchIcon size={14} />
                                 <span>Similar</span>
                               </button>
@@ -695,7 +695,7 @@ const CartPage = () => {
                               <HeartOutlineIcon size={14} />
                               <span>Save</span>
                             </button>
-                            <button className="action-btn" onClick={() => navigate('/sales/crm/seat-covers')}>
+                            <button className="action-btn" onClick={() => navigate('/sales/crm/all')}>
                               <SearchIcon size={14} />
                               <span>Similar</span>
                             </button>
@@ -818,7 +818,7 @@ const CartPage = () => {
         item={cart.find((i) => i.cartItemId === qtyEditId) || null}
        onClose={() => setQtyEditId(null)}
        onSave={(r) => handleSaveApparelQty(qtyEditId, r)}
-        onBrowseSimilar={() => navigate('/sales/crm/seat-covers')}
+        onBrowseSimilar={() => navigate('/sales/crm/all')}
       />
 
       <DesignPreviewModal

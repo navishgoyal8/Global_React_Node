@@ -1182,9 +1182,10 @@ const Storefront = () => {
                     />
                   ))
                 )}
+                {!isLoading && (
+                  <ApparelSection embedded cart={cart} handleApparelAdd={handleApparelAdd} handleCustomTeeAdd={handleCustomTeeAdd} goToCart={goToCart} />
+                )}
               </div>
-
-              <ApparelSection embedded cart={cart} handleApparelAdd={handleApparelAdd} handleCustomTeeAdd={handleCustomTeeAdd} goToCart={goToCart} />
             </>
           )}
          </div>

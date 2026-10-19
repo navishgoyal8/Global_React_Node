@@ -27,6 +27,7 @@ const SlidersIcon = makeIcon(<><line x1="21" x2="14" y1="4" y2="4" /><line x1="1
 const ChevronDownIcon = makeIcon(<path d="M6 9l6 6 6-6" />);
 const ChevronLeftIcon = makeIcon(<path d="M15 18l-6-6 6-6" />);
 const ChevronRightIcon = makeIcon(<path d="M9 18l6-6-6-6" />);
+const GridIcon = makeIcon(<><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>);
 
 const HeartIcon = ({ size = 19, filled = false, color = '#94a3b8' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? '#f97316' : 'none'} stroke={filled ? '#f97316' : color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -36,6 +37,7 @@ const HeartIcon = ({ size = 19, filled = false, color = '#94a3b8' }) => (
 
 // ── DATA (hardcoded reference items) ────────────────────────────────────────
 const CATEGORIES = [
+  { id: 'all', label: 'All', icon: GridIcon },
   { id: 'shirts', label: 'Shirts / Tshirts', icon: ShirtIcon },
   { id: 'jackets', label: 'Jackets', icon: ShirtIcon },
   { id: 'hats', label: 'Hats', icon: CapIcon },
@@ -246,7 +248,7 @@ const mapDbProduct = (p) => {
 
 // ── APPAREL STOREFRONT SECTION (Global Customs, backed by DB) ──────────────
 export default function ApparelSection({ cart = [], handleApparelAdd, handleCustomTeeAdd, goToCart, embedded = false }) {
-  const [activeCategory, setActiveCategory] = useState('shirts');
+  const [activeCategory, setActiveCategory] = useState('all');
   const [page, setPage] = useState(1);
   const [favorites, setFavorites] = useState(new Set());
   const [products, setProducts] = useState([]);
@@ -280,14 +282,15 @@ export default function ApparelSection({ cart = [], handleApparelAdd, handleCust
     return () => { cancelled = true; };
   }, []);
 
-     const filtered = useMemo(
-    () => embedded ? products : products.filter(p => p.category === activeCategory),
+  const filtered = useMemo(
+    () => (embedded || activeCategory === 'all') ? products : products.filter(p => p.category === activeCategory),
     [products, activeCategory, embedded]
    );
 
   const categoryCounts = useMemo(() => {
     const counts = {};
     products.forEach(p => { counts[p.category] = (counts[p.category] || 0) + 1; });
+    counts.all = products.length
     return counts;
   }, [products]);
 
@@ -323,9 +326,79 @@ export default function ApparelSection({ cart = [], handleApparelAdd, handleCust
     window.scrollTo(0, 0);
   };
 
+   const renderCard = (product) => {
+    const isFav = favorites.has(product.id);
+    return (
+      <div key={product.id} className="product-card">
+        <div className="card-top">
+          <div></div>
+          <button
+            className="wishlist-btn"
+            onClick={(e) => { e.stopPropagation(); toggleFavorite(product.id); }}
+            aria-label="Toggle favorite"
+            style={{ borderColor: isFav ? '#ef4444' : '', backgroundColor: isFav ? '#fef2f2' : 'white', color: isFav ? '#ef4444' : '#9ca3af' }}
+          >
+            <HeartIcon filled={isFav} color={isFav ? '#ef4444' : '#9ca3af'} />
+          </button>
+        </div>
+
+        {product.image ? (
+          <img
+            src={product.image}
+            alt={product.name}
+            className="product-image"
+            onClick={() => openDetail(product)}
+            onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/300x300/f3f4f6/9ca3af?text=No+Img'; }}
+          />
+        ) : (
+          <div onClick={() => openDetail(product)} style={{ cursor: 'pointer' }}><ProductThumb product={product} /></div>
+        )}
+
+        <div className="product-title" onClick={() => openDetail(product)} style={{ cursor: 'pointer' }}>{product.name}</div>
+        <div className="product-category">Apparel</div>
+
+        <div className="mini-filters">
+          <div className="mini-filter-row">
+            <span className="mini-filter-label">Colors</span>
+            <ColorDots product={product} />
+          </div>
+          {product.listDescription && (
+            <div className="product-desc" onClick={() => openDetail(product)} title={product.listDescription} style={{ marginTop: '10px' }}>{product.listDescription}</div>
+          )}
+        </div>
+
+        <div className="card-bottom" style={{ marginTop: '16px' }}>
+          <div className="price-row">
+            {product.originalPrice && <span className="original-price">${product.originalPrice.toFixed(2)}</span>}
+            <span className="current-price">${product.price.toFixed(2)}</span>
+          </div>
+          <div className="action-row">
+            <button className="btn-add-cart" onClick={() => openDetail(product)}>View</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+
   if (configuring) {
     return <CustomTeeConfigurator product={products} onBack={() => { setConfiguring(null); window.scrollTo(0, 0); }} cart={cart} handleCustomTeeAdd={handleCustomTeeAdd} goToCart={goToCart} />;
   }
+
+  if (embedded) {
+    return (
+      <>
+        <style>{`
+          .ap-dots { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+          .ap-dot { width: 18px; height: 18px; border-radius: 50%; border: 1px solid #cbd5e1; box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
+          .ap-dot-more { font-size: 12px; font-weight: 600; color: #64748b; margin-left: 2px; }
+        `}</style>
+        {pageItems.map(renderCard)}
+      </>
+    );
+  }
+
+  
 
   if (selected) {
     return <ApparelDetail product={selected} onBack={() => { setSelected(null); window.scrollTo(0, 0); }} cart={cart} handleApparelAdd={handleApparelAdd} goToCart={goToCart} />;
@@ -339,7 +412,7 @@ export default function ApparelSection({ cart = [], handleApparelAdd, handleCust
         .apparel-prod-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
         .apparel-trust-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
         @media (min-width: 640px) {
-          .apparel-cat-grid { grid-template-columns: repeat(4, 1fr); gap: 12px; }
+          .apparel-cat-grid { grid-template-columns: repeat(5, 1fr); gap: 12px; }
           .apparel-trust-grid { grid-template-columns: repeat(4, 1fr); }
         }
         @media (min-width: 768px) {
@@ -364,24 +437,7 @@ export default function ApparelSection({ cart = [], handleApparelAdd, handleCust
 
       <div style={{ maxWidth: embedded ? 'none' : '1152px', margin: '0 auto', padding: embedded ? '0' : '24px 20px' }}>
 
-        {/* ── GC Brand banner ── */}
-        {
-          !embedded && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-          <div style={{ width: '44px', height: '44px', borderRadius: '10px', border: '2px solid #f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', flexShrink: 0 }}>
-            <span style={{ color: '#f97316', fontWeight: 800, fontSize: '15px', letterSpacing: '-0.02em' }}>GC</span>
-          </div>
-          <div>
-            <div style={{ fontSize: '20px', fontWeight: 800, lineHeight: 1.2 }}>
-              <span style={{ color: '#f97316' }}>GLOBAL</span> <span style={{ color: '#0f172a' }}>CUSTOMS</span>
-            </div>
-            <div style={{ fontSize: '10px', letterSpacing: '0.15em', color: C.muted, fontWeight: 500 }}>
-              APPAREL · EMBROIDERY · UNIFORMS
-            </div>
-          </div>
-        </div>
-          )
-        }
+        
         
 
         {/* ── Shop by category ── */}
@@ -398,16 +454,15 @@ export default function ApparelSection({ cart = [], handleApparelAdd, handleCust
                   onClick={() => selectCategory(cat.id)}
                   type="button"
                   style={{
-                    borderRadius: '12px', border: `1.5px solid ${active ? '#f97316' : C.border}`,
-                    background: active ? 'rgba(255, 237, 213, 0.45)' : '#fff',
+                   borderRadius: '12px', border: `1.5px solid ${active ? '#3b28cc' : C.border}`,
+                  background: active ? '#eff1ff' : '#fff',
                     padding: '10px 14px', display: 'flex', flexDirection: 'row',
                     alignItems: 'center', gap: '10px', textAlign: 'left',
                     cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'inherit',
-                    boxShadow: active ? '0 2px 10px rgba(249,115,22,0.12)' : 'none',
-                    minWidth: 0,
+                    boxShadow: active ? '0 2px 10px rgba(59,40,204,0.15)' : 'none',                    minWidth: 0,
                   }}
                 >
-                  <div style={{ width: '40px', height: '40px', minWidth: '40px', borderRadius: '10px', background: active ? '#f97316' : '#111318', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: '40px', height: '40px', minWidth: '40px', borderRadius: '10px', background: active ? '#3b28cc' : '#111318', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Icon size={20} strokeWidth={1.6} color={active ? '#fff' : '#f4f4f5'} />
                   </div>
                   <div style={{ minWidth: 0 }}>
@@ -462,60 +517,7 @@ export default function ApparelSection({ cart = [], handleApparelAdd, handleCust
 
           {/* Product grid */}
           <div className="product-grid">
-            {pageItems.map(product => {
-              const isFav = favorites.has(product.id);
-              return (
-
-                <div key={product.id} className="product-card">
-                  <div className="card-top">
-                    <div></div>
-                    <button
-                      className="wishlist-btn"
-                      onClick={(e) => { e.stopPropagation(); toggleFavorite(product.id); }}
-                      aria-label="Toggle favorite"
-                      style={{ borderColor: isFav ? '#ef4444' : '', backgroundColor: isFav ? '#fef2f2' : 'white', color: isFav ? '#ef4444' : '#9ca3af' }}
-                    >
-                      <HeartIcon filled={isFav} color={isFav ? '#ef4444' : '#9ca3af'} />
-                    </button>
-                  </div>
-
-                  {product.image ? (
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="product-image"
-                      onClick={() => openDetail(product)}
-                      onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/300x300/f3f4f6/9ca3af?text=No+Img'; }}
-                    />
-                  ) : (
-                    <div onClick={() => openDetail(product)} style={{ cursor: 'pointer' }}><ProductThumb product={product} /></div>
-                  )}
-
-                  <div className="product-title" onClick={() => openDetail(product)} style={{ cursor: 'pointer' }}>{product.name}</div>
-                  <div className="product-category">Apparel</div>
-
-                  <div className="mini-filters">
-                    <div className="mini-filter-row">
-                      <span className="mini-filter-label">Colors</span>
-                      <ColorDots product={product} />
-                    </div>
-                    {product.listDescription && (
-                      <div className="product-desc" onClick={() => openDetail(product)} title={product.listDescription} style={{ marginTop: '10px' }}>{product.listDescription}</div>
-                    )}
-                  </div>
-
-                  <div className="card-bottom" style={{ marginTop: '16px' }}>
-                    <div className="price-row">
-                      {product.originalPrice && <span className="original-price">${product.originalPrice.toFixed(2)}</span>}
-                      <span className="current-price">${product.price.toFixed(2)}</span>
-                    </div>
-                    <div className="action-row">
-                      <button className="btn-add-cart" onClick={() => openDetail(product)}>View</button>
-                    </div>
-                  </div>
-                </div>
-               );
-            })}
+            {pageItems.map(renderCard)}
 
             {isLoading && (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#6b7280', padding: '64px 0' }}>
@@ -572,8 +574,7 @@ export default function ApparelSection({ cart = [], handleApparelAdd, handleCust
           <div className="apparel-trust-grid">
             {TRUST_ITEMS.map(({ icon: Icon, title, subtitle }) => (
               <div key={title} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ flexShrink: 0, width: '40px', height: '40px', borderRadius: '50%', border: `1px solid ${C.orangeCircle}`, background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f97316' }}>
-                  <Icon size={18} />
+                <div style={{ flexShrink: 0, width: '40px', height: '40px', borderRadius: '50%', border: '1px solid #c7cdfa', background: '#eff1ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b28cc' }}>                  <Icon size={18} />
                 </div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: '14px', lineHeight: 1.3 }}>{title}</div>

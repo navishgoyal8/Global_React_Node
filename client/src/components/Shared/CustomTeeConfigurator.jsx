@@ -437,6 +437,39 @@ const ContactModal = ({ open, onClose, productName }) => {
   );
 };
 
+ // ── MAIN CONFIGURATOR PAGE COMPONENT ─────────────────────────────────────────
+// Used when this page is opened from its own route (no cart props passed in).
+// Mirrors Storefront's handleCustomTeeAdd and writes to the same localStorage cart.
+const addCustomTeeToStoredCart = (product, config) => {
+  const sig = JSON.stringify(config || {});
+  let hash = 0;
+  for (let i = 0; i < sig.length; i++) {
+    hash = (Math.imul(31, hash) + sig.charCodeAt(i)) | 0;
+  }
+  const cartItemId = `tee-${product.id}-${Math.abs(hash).toString(36)}`;
+  let stored = [];
+  try { stored = JSON.parse(localStorage.getItem('seatcover_cart')) || []; } catch { stored = []; }
+  if (stored.some((item) => item.cartItemId === cartItemId)) return;
+  stored.push({
+    ...product,
+    name: product.name || 'Custom Tee',
+    image: product.image || '',
+    cartItemId,
+    price: Number(config?.estTotal) || 0,
+    originalPrice: 0,
+    qty: 1,
+    type: 'A',
+    isCustomApparel: true,
+    totalPieces: config?.totalPieces || 0,
+    apparel: config || {},
+  });
+  try {
+    localStorage.setItem('seatcover_cart', JSON.stringify(stored));
+  } catch (err) {
+    console.error('[cart] save failed', err);
+  }
+};
+
 // ── MAIN CONFIGURATOR PAGE COMPONENT ─────────────────────────────────────────
 export default function CustomTeeConfigurator({ cart = [], handleCustomTeeAdd, goToCart, onBack }) {
   const { id } = useParams();
@@ -742,9 +775,10 @@ const overlays = [
       notes: team ? 'Design by our team — we will contact you to finalize your logo.' : notes.trim(),
       unitPrice: unit, estTotal: total,
     };
-    handleCustomTeeAdd?.(product, config);
+    if(handleCustomTeeAdd) handleCustomTeeAdd(product,config)
+    else addCustomTeeToStoredCart(product,config)
     showToast('Added to cart ✓');
-    setTimeout(() => goToCart ? goToCart() : window.location.href = '/sales/crm/cart', 900);
+    setTimeout(() => (goToCart ? goToCart() : navigate('/sales/crm/cart')), 900);
   };
 
   const handleBack = () => {
