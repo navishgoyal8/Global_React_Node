@@ -47,34 +47,9 @@ exports.getAllProducts = async (req, res) => {
       WHERE p.status = 1 AND p.is_deleted = 0
     `);
 
-    const productsMap = new Map();
-        // colors + per-size stock, read live from product_colors / product_variants
-    const ids = Array.from(productsMap.keys());
-    if (ids.length) {
-      const [colorRows] = await connection.query(
-        `SELECT id, product_id, name, hex, front_image, back_image
-         FROM product_colors WHERE product_id IN (?) ORDER BY sort_order, id`, [ids]);
-      const [variantRows] = await connection.query(
-        `SELECT product_id, color_id, size, qty
-         FROM product_variants WHERE product_id IN (?)`, [ids]);
+    
 
-      const stockByColor = {};
-      for (const v of variantRows) {
-        (stockByColor[v.color_id] = stockByColor[v.color_id] || {})[v.size] = Number(v.qty);
-      }
-      const colorsByProduct = {};
-      for (const c of colorRows) {
-        (colorsByProduct[c.product_id] = colorsByProduct[c.product_id] || []).push({
-          name: c.name, hex: c.hex,
-          front_image: c.front_image, back_image: c.back_image,
-          stock: stockByColor[c.id] || {},
-        });
-      }
-      for (const [pid, product] of productsMap) {
-        // a JSON string, because ApparelSection's firstColor() does JSON.parse(String(...))
-        if (colorsByProduct[pid]) product.colors = JSON.stringify(colorsByProduct[pid]);
-      }
-    }
+    const productsMap = new Map();
     for (const row of rows) {
       if (!productsMap.has(row.id)) {
         const {
@@ -122,7 +97,39 @@ exports.getAllProducts = async (req, res) => {
       }
     }
 
-    res.json({ success: true, data: Array.from(productsMap.values()) });
+    // colors + per-size stock, read live from product_colors / product_variants
+    const ids = Array.from(productsMap.keys());
+    if (ids.length) {
+      const [colorRows] = await connection.query(
+        `SELECT id, product_id, name, hex, front_image, back_image
+         FROM product_colors WHERE product_id IN (?) ORDER BY sort_order, id`, [ids]);
+      const [variantRows] = await connection.query(
+        `SELECT product_id, color_id, size, qty
+         FROM product_variants WHERE product_id IN (?)`, [ids]);
+
+      const stockByColor = {};
+      for (const v of variantRows) {
+        (stockByColor[v.color_id] = stockByColor[v.color_id] || {})[v.size] = Number(v.qty);
+      }
+      const colorsByProduct = {};
+      for (const c of colorRows) {
+        (colorsByProduct[c.product_id] = colorsByProduct[c.product_id] || []).push({
+          name: c.name, hex: c.hex,
+          front_image: c.front_image, back_image: c.back_image,
+          stock: stockByColor[c.id] || {},
+        });
+      }
+      for (const [pid, product] of productsMap) {
+        // a JSON string, because ApparelSection's firstColor() does JSON.parse(String(...))
+        if (colorsByProduct[pid]) product.colors = JSON.stringify(colorsByProduct[pid]);
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      data: Array.from(productsMap.values())
+    });
+
   } catch (error) {
     console.error("Error fetching products:", error);
     res.status(500).json({ success: false, message: "Failed to fetch products" });
@@ -149,12 +156,15 @@ exports.getStoreFilters = async (req, res) => {
     AND l.is_deleted = 0
   ORDER BY name ASC
 `);
+
+        const [apparelSubcategories] = await connection.query('SELECT id, name FROM apparel_subcategories ORDER BY name ASC')
       res.status(200).json({ 
           success: true, 
           makes, 
           models, 
           categories, 
-          builders 
+          builders,
+          apparelSubcategories
       });
   } catch (error) {
       console.error("Filter Fetch Error:", error);

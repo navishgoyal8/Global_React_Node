@@ -51,6 +51,40 @@ const SUBCATEGORY_TO_ID = {
   hats: 'hats', hat: 'hats', caps: 'hats', cap: 'hats', beanies: 'hats', beanie: 'hats',
   shoes: 'shoes', sneakers: 'shoes', sneaker: 'shoes', footwear: 'shoes', boots: 'shoes',
 };
+
+const iconForName = (name) => {
+  const id = categoryIdFor(name);
+  return id === 'hats' ? CapIcon : id === 'shoes' ? ShoeIcon : ShirtIcon;
+};
+
+const sizeList = (field) => {
+  if (!field) return [];
+  let list;
+  try { const parsed = JSON.parse(String(field)); list = Array.isArray(parsed) ? parsed : [parsed]; }
+  catch { list = String(field).split(','); }
+  return list.map(e => String(e?.size || e?.name || e?.label || e || '').trim()).filter(Boolean);
+};
+
+const FilterDropdown = ({ label, options, selected, onToggle, open, setOpen }) => (
+  <div style={{ position: 'relative' }}>
+    {open && <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 20 }} />}
+    <button type="button" onClick={() => setOpen(!open)}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', border: `1px solid ${selected.length ? '#3b28cc' : C.border}`, fontSize: '14px', fontWeight: 600, color: selected.length ? '#3b28cc' : C.subtle, background: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}>
+      {label}{selected.length > 0 && ` (${selected.length})`} <ChevronDownIcon size={15} strokeWidth={2.4} />
+    </button>
+    {open && (
+      <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 30, minWidth: '180px', maxHeight: '260px', overflowY: 'auto', background: '#fff', border: `1px solid ${C.border}`, borderRadius: '10px', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', padding: '6px 0' }}>
+        {options.length === 0 && <div style={{ padding: '10px 14px', fontSize: '13px', color: C.faint }}>No options</div>}
+        {options.map(opt => (
+          <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={selected.includes(opt)} onChange={() => onToggle(opt)} /> {opt}
+          </label>
+        ))}
+      </div>
+    )}
+  </div>
+);
+
 const categoryIdFor = (value) => {
   if (!value) return 'shirts';
   const key = String(value).trim().toLowerCase();
@@ -217,12 +251,12 @@ const ProductThumb = ({ product }) => {
 
 // Map a raw DB product row into the shape used by the apparel card grid.
 const mapDbProduct = (p) => {
-  const catId = categoryIdFor(p.subcategory1);
+  const catId = categoryIdFor(p.subcategory_name);
   const icon = (catId === 'hats' ? CapIcon : catId === 'shoes' ? ShoeIcon : ShirtIcon);
   const price = parseFloat(p.selling_price ?? p.dp ?? p.price);
   const orig = parseFloat(p.compare_at_price) > price ? parseFloat(p.compare_at_price) : null;
   const color = firstColor(p.colors);
-  console.log("mapdb", p)
+  
   return {
     id: p.id,
     name: p.display_name || p.name || 'Apparel Item',
@@ -231,11 +265,16 @@ const mapDbProduct = (p) => {
     colorList: allColors(p.colors),
     price: Number.isFinite(price) ? price : 28,
     category: catId,
+    subcategoryId: p.subcategory1 != null ? String(p.subcategory1) : '',
+    brand: p.brand_name || '',
+    sizeList: sizeList(p.sizes),
     icon,
     image: resolveImage(p.image),
     images: parseImageEntries(p.image).map(resolveImage).filter(Boolean), print_areas: p.print_areas,
     colors: p.colors || null,
     sizes: p.sizes || null,
+    size_chart_mode: p.size_chart_mode === 'image' ? 'image' : 'table',
+    size_chart_image: p.size_chart_image ? resolveImage(p.size_chart_image) : null,
     selling_price: p.selling_price ?? p.dp ?? p.price,
     compare_at_price: p.compare_at_price || null,
     listDescription: (p.list_page_description || '').trim(),
@@ -248,7 +287,11 @@ const mapDbProduct = (p) => {
 
 // ── APPAREL STOREFRONT SECTION (Global Customs, backed by DB) ──────────────
 export default function ApparelSection({ cart = [], handleApparelAdd, handleCustomTeeAdd, goToCart, embedded = false }) {
+
   const [activeCategory, setActiveCategory] = useState('all');
+  const [subcategories, setSubcategories] = useState([]);
+  const [filters, setFilters] = useState({ color: [], size: [], brand: [], price: '' });
+  const [openFilter, setOpenFilter] = useState(null);
   const [page, setPage] = useState(1);
   const [favorites, setFavorites] = useState(new Set());
   const [products, setProducts] = useState([]);
@@ -282,17 +325,66 @@ export default function ApparelSection({ cart = [], handleApparelAdd, handleCust
     return () => { cancelled = true; };
   }, []);
 
-  const filtered = useMemo(
-    () => (embedded || activeCategory === 'all') ? products : products.filter(p => p.category === activeCategory),
-    [products, activeCategory, embedded]
-   );
+    useEffect(() => {
+    if (embedded) return;
+    fetch(`${API_BASE_URL}/products/store-filters`)
+      .then(r => r.json())
+      .then(d => { if (d?.success) setSubcategories(d.apparelSubcategories || []); })
+      .catch(() => {});
+  }, [embedded]);
+
+  const uniq = (arr) => [...new Set(arr)];
+  const colorOptions = useMemo(() => uniq(products.flatMap(p => (p.colorList || []).map(c => c.name))).sort(), [products]);
+  const sizeOptions = useMemo(() => uniq(products.flatMap(p => p.sizeList || [])), [products]);
+  const brandOptions = useMemo(() => uniq(products.map(p => p.brand).filter(Boolean)).sort(), [products]);
+  const priceOptions = useMemo(() => {
+    const prices = products.map(p => p.price).filter(Number.isFinite);
+    if (!prices.length) return [];
+    const min = Math.floor(Math.min(...prices)), max = Math.ceil(Math.max(...prices));
+    if (min === max) return [];
+    const step = Math.max(1, Math.ceil((max - min) / 4 / 5) * 5);
+    const out = [];
+    for (let lo = Math.floor(min / step) * step; lo < max; lo += step) out.push({ label: `$${lo} – $${lo + step}`, lo, hi: lo + step });
+    return out;
+  }, [products]);
+
+  const filtered = useMemo(() => {
+    if (embedded) return products;
+    const pr = priceOptions.find(o => o.label === filters.price);
+    return products.filter(p => {
+      if (activeCategory !== 'all' && p.subcategoryId !== activeCategory) return false;
+      if (filters.color.length && !(p.colorList || []).some(c => filters.color.includes(c.name))) return false;
+      if (filters.size.length && !(p.sizeList || []).some(s => filters.size.includes(s))) return false;
+      if (filters.brand.length && !filters.brand.includes(p.brand)) return false;
+      if (pr && !(p.price >= pr.lo && p.price <= pr.hi)) return false;
+      return true;
+    });
+  }, [products, embedded, activeCategory, filters, priceOptions]);
 
   const categoryCounts = useMemo(() => {
-    const counts = {};
-    products.forEach(p => { counts[p.category] = (counts[p.category] || 0) + 1; });
-    counts.all = products.length
+    const counts = { all: products.length };
+    products.forEach(p => { counts[p.subcategoryId] = (counts[p.subcategoryId] || 0) + 1; });
     return counts;
   }, [products]);
+
+  const categoryList = useMemo(() => [
+    { id: 'all', label: 'All', icon: GridIcon },
+    ...subcategories.map(s => ({ id: String(s.id), label: s.name, icon: iconForName(s.name) })),
+  ], [subcategories]);
+
+  const filterDefs = [
+    { key: 'color', label: 'Color', options: colorOptions },
+    { key: 'size', label: 'Size', options: sizeOptions },
+    { key: 'brand', label: 'Brand', options: brandOptions },
+    { key: 'price', label: 'Price', options: priceOptions.map(o => o.label), single: true },
+  ];
+  const hasFilters = filters.color.length || filters.size.length || filters.brand.length || filters.price;
+  const toggleFilter = (key, val, single) => {
+    setPage(1);
+    setFilters(f => single
+      ? { ...f, [key]: f[key] === val ? '' : val }
+      : { ...f, [key]: f[key].includes(val) ? f[key].filter(v => v !== val) : [...f[key], val] });
+  };
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = embedded ? filtered : filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -315,7 +407,6 @@ export default function ApparelSection({ cart = [], handleApparelAdd, handleCust
   };
 
   const openDetail = (product) => {
-    console.log("T-Shirt Clicked! ID:", product.id);
 
     // Strip out the 'icon' function (and any other non-data properties) 
     // so the browser's History API doesn't crash trying to clone it.
@@ -445,7 +536,7 @@ export default function ApparelSection({ cart = [], handleApparelAdd, handleCust
         <section style={{ marginBottom: '28px' }}>
           <h1 className='ap-heading' style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 14px 0', letterSpacing: '-0.02em' }}>Shop by Category</h1>
           <div className="apparel-cat-grid">
-            {CATEGORIES.map(cat => {
+            {categoryList.map(cat => {
               const Icon = cat.icon;
               const active = activeCategory === cat.id;
               return (
@@ -488,31 +579,27 @@ export default function ApparelSection({ cart = [], handleApparelAdd, handleCust
             <span style={{ fontSize: '14px', color: C.faint }}>{filtered.length} products</span>
           </div>
 
-          {/* Filters (decorative, per reference) */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
-            {FILTERS.map(f => (
-              <button
-                key={f}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '6px',
-                  padding: '8px 16px', borderRadius: '8px', border: `1px solid ${C.border}`,
-                  fontSize: '14px', fontWeight: 600, color: C.subtle, background: '#fff',
-                  cursor: 'pointer', fontFamily: 'inherit',
-                }}
-              >
-                {f} <ChevronDownIcon size={15} strokeWidth={2.4} />
-              </button>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+            {filterDefs.map(f => (
+              <FilterDropdown
+                key={f.key}
+                label={f.label}
+                options={f.options}
+                selected={f.single ? [filters[f.key]].filter(Boolean) : filters[f.key]}
+                onToggle={(val) => toggleFilter(f.key, val, f.single)}
+                open={openFilter === f.key}
+                setOpen={(o) => setOpenFilter(o ? f.key : null)}
+              />
             ))}
-            <button
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                padding: '8px 16px', borderRadius: '8px', border: `1px solid ${C.borderStrong}`,
-                fontSize: '14px', fontWeight: 600, color: C.slate, background: '#fff',
-                cursor: 'pointer', fontFamily: 'inherit', marginLeft: 'auto',
-              }}
-            >
-              <SlidersIcon size={15} /> Filters
-            </button>
+            {hasFilters && (
+              <button
+                type="button"
+                onClick={() => { setFilters({ color: [], size: [], brand: [], price: '' }); setPage(1); }}
+                style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#3b28cc', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+              >
+                Clear all
+              </button>
+            )}
           </div>
 
           {/* Product grid */}

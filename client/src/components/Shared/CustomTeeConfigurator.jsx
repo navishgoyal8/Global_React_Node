@@ -482,18 +482,24 @@ export default function CustomTeeConfigurator({ cart = [], handleCustomTeeAdd, g
   const [descOpen, setDescOpen] = useState(false);
 
   useEffect(() => {
-
-    console.log("custom",product)
-    if (!product && id) {
-      console.log("fetching product",id)
-      fetch(`${API_BASE_URL}/products/${id}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.success) setProduct(data.data || data.product);
-        })
-        .finally(() => setLoading(false));
-    }
-  }, [id, product]);
+  if (!id) return;
+  fetch(`${API_BASE_URL}/products/${id}`)
+    .then((res) => res.json())
+    .then((data) => {
+      const fresh = data?.data || data?.product;
+      if (!data?.success || !fresh) return;
+      // only refresh the fields that change; keep the mapped fields (image, images, price...) as they are
+      setProduct((prev) => prev ? ({
+        ...prev,
+        colors: fresh.colors ?? prev.colors,
+        sizes: fresh.sizes ?? prev.sizes,
+        size_chart_mode: fresh.size_chart_mode === 'image' ? 'image' : 'table',
+        size_chart_image: fresh.size_chart_image ?? null,
+      }) : fresh);
+    })
+    .catch(() => {})
+    .finally(() => setLoading(false));
+}, [id]);
 
   const sizes = useMemo(() => parseSizes(product?.sizes), [product]);
   const colors = useMemo(() => parseColors(product?.colors), [product]);
@@ -805,8 +811,8 @@ const overlays = [
 
   const [chartOpen, setChartOpen] = useState(false);
   const sizeChartRows = useMemo(() => getSizes(product), [product]);
-  const hasChart = sizeChartRows.some((s) => Object.values(s.chart || {}).some((v) => v != null && v !== ''));
-  const focusQty = (i) => document.getElementById(`tc-qty-${i}`)?.focus();
+const chartImage = product?.size_chart_mode === 'image' ? (resolveImageUrl(product?.size_chart_image) || null) : null;
+const hasChart = !!chartImage || sizeChartRows.some((s) => Object.values(s.chart || {}).some((v) => v != null && v !== ''));  const focusQty = (i) => document.getElementById(`tc-qty-${i}`)?.focus();
   const hasMore = (product?.listDescription || '').length > 140 || !!detailHtml;
   const rating = num(product?.rating);
   const reviewCount = num(product?.review_count ?? product?.reviews_count);
@@ -1221,8 +1227,7 @@ const overlays = [
       </main>
 
       <ContactModal open={contactOpen} onClose={() => setContactOpen(false)} productName={productName} />
-      <SizeChartDrawer open={chartOpen} onClose={() => setChartOpen(false)} sizes={sizeChartRows} image={product?.size_chart_image} />
-
+    <SizeChartDrawer open={chartOpen} onClose={() => setChartOpen(false)} sizes={sizeChartRows} chartImage={chartImage} />
       {toast && (
         <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: '#0f172a', color: '#fff', padding: '12px 20px', borderRadius: 12, fontSize: 13, fontWeight: 600, zIndex: 9999, boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
           {toast}

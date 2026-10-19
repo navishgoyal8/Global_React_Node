@@ -212,7 +212,8 @@ exports.processCheckout = async (req, res) => {
     else if (totalPhysicalItems >= 8) shipping = totalPhysicalItems * 29;
 
     const tax = physicalSubtotal * 0.08;
-    const trueOrderTotal = physicalSubtotal + tax + shipping + digitalSubtotal;
+    const physicalOrderTotal = physicalSubtotal + tax + shipping;
+    const trueOrderTotal = physicalSubtotal + digitalSubtotal;
 
     // ==========================================
     // 3. ACTIVATE MEMBERSHIPS & LISTINGS 
@@ -277,11 +278,15 @@ exports.processCheckout = async (req, res) => {
           userId, customerData.firstName || '', customerData.lastName || '', customerData.email, customerData.phone || '',
           busDetail, busDetail, customerData.city || '', customerData.state || '', customerData.address || '', customerData.zip || '',
           customerData.city || '', customerData.state || '', customerData.zip || '', customerData.address || '',
-          trueOrderTotal.toString(), trueOrderTotal, trueOrderTotal, userId
+          physicalSubtotal.toString(), physicalOrderTotal, physicalOrderTotal, userId
         ]
       );
 
       const physicalOrderId = orderResult.insertId;
+      await connection.query(
+  `UPDATE orders SET tax_amount = ?, shipping_amount = ?, discount_amount = 0 WHERE id = ?`,
+  [tax, shipping, physicalOrderId]
+);
 
       for (let item of physicalItems) {
         const totalValue = item.actualPrice * item.qty;

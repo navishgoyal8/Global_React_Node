@@ -30,7 +30,7 @@ const SizeDiagram = () => (
   </svg>
 );
 
-const SizeChartDrawer = ({ open, onClose, sizes, image }) => {
+const SizeChartDrawer = ({ open, onClose, sizes, image, chartImage }) => {
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -50,6 +50,7 @@ const SizeChartDrawer = ({ open, onClose, sizes, image }) => {
         .sc-panel { position: relative; width: min(100%, 760px); height: 100%; background: #fff; overflow-y: auto; box-sizing: border-box; padding: 72px 32px calc(32px + env(safe-area-inset-bottom, 0px)); animation: sc-slide .25s ease; font-family: 'Inter', sans-serif; color: #0f172a; }
         .sc-close { position: absolute; top: 16px; right: 16px; background: none; border: none; padding: 8px; display: flex; cursor: pointer; color: #0f172a; }
         .sc-diagram { margin-bottom: 32px; }
+        .sc-chart-img { display: block; width: 100%; height: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
         .sc-diagram svg, .sc-diagram img { display: block; width: 100%; max-width: 420px; height: auto; }
         .sc-title { margin: 0 0 24px; font-size: clamp(28px, 4vw, 40px); font-weight: 800; line-height: 1.1; }
         .sc-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -73,24 +74,33 @@ const SizeChartDrawer = ({ open, onClose, sizes, image }) => {
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18" /><path d="M6 6l12 12" /></svg>
         </button>
 
-        <div className="sc-diagram">{image ? <img src={image} alt="Size guide" /> : <SizeDiagram />}</div>
-        <h2 className="sc-title">Size Chart</h2>
+        {chartImage ? (
+          <>
+            <h2 className="sc-title">Size Chart</h2>
+            <img className="sc-chart-img" src={chartImage} alt="Size chart" />
+          </>
+        ) : (
+          <>
+            <div className="sc-diagram">{image ? <img src={image} alt="Size guide" /> : <SizeDiagram />}</div>
+            <h2 className="sc-title">Size Chart</h2>
 
-        <div className="sc-scroll">
-          <table className="sc-table">
-            <thead>
-              <tr><th>Size</th>{sizes.map((s) => <th key={s.label}>{s.label}</th>)}</tr>
-            </thead>
-            <tbody>
-              {rows.map((m) => (
-                <tr key={m.key}>
-                  <th scope="row">{m.label}<span>(in/cm)</span></th>
-                  {sizes.map((s) => <td key={s.label}>{fmt(s.chart?.[m.key])}</td>)}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            <div className="sc-scroll">
+              <table className="sc-table">
+                <thead>
+                  <tr><th>Size</th>{sizes.map((s) => <th key={s.label}>{s.label}</th>)}</tr>
+                </thead>
+                <tbody>
+                  {rows.map((m) => (
+                    <tr key={m.key}>
+                      <th scope="row">{m.label}<span>(in/cm)</span></th>
+                      {sizes.map((s) => <td key={s.label}>{fmt(s.chart?.[m.key])}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </aside>
     </div>
   );

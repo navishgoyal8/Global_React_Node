@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { API_BASE_URL } from '../config'; 
 import { DesignOnShirt } from '../components/Apparel/DesignPreview';
 import './CheckoutPage.css';
 import DesignPreviewModal, { canPreviewDesign } from '../components/Apparel/DesignPreviewModal';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -20,6 +22,15 @@ const CheckoutPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewItem, setPreviewItem] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [loginStep, setLoginStep] = useState('identify'); // 'identify' | 'otp'
+  const [loginId, setLoginId] = useState('');
+  const [otp, setOtp] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [loginBusy, setLoginBusy] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
+  const [loggedInUser, setLoggedInUser] = useState(null);
+  const googleBtnRef = useRef(null);
 
   // Form State including User Creation fields (No Password)
   const [formData, setFormData] = useState({
@@ -133,6 +144,92 @@ const CheckoutPage = () => {
     setFormData({ ...formData, [name]: formattedValue });
   };
 
+   // ── LOGIN WITH EXISTING ACCOUNT ──
+  const openLogin = () => { setLoginStep('identify'); setLoginId(''); setOtp(''); setLoginError(''); setShowLogin(true); };
+  const closeLogin = () => setShowLogin(false);
+
+  const applyUser = (u) => {
+    setLoggedInUser(u);
+    setFormData(f => ({
+      ...f,
+      firstName: u.firstName || f.firstName,
+      lastName: u.lastName || f.lastName,
+      email: u.email || f.email,
+      phone: u.phone || f.phone,
+      address: u.address || f.address,
+      city: u.city || f.city,
+      state: u.state || f.state,
+      zip: u.zip || f.zip,
+    }));
+    setShowLogin(false);
+  };
+
+  const postAuth = async (path, body) => {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) throw new Error(data.message || 'Something went wrong. Please try again.');
+    return data;
+  };
+
+  const handleSendOtp = async () => {
+    const id = loginId.trim();
+    if (!id) { setLoginError('Enter your email or phone number.'); return; }
+    setLoginBusy(true); setLoginError('');
+    try {
+      await postAuth('/auth/send-otp', { identifier: id });
+      setLoginStep('otp'); setOtp(''); setResendIn(30);
+    } catch (e) { setLoginError(e.message); }
+   finally { setLoginBusy(false); }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otp.length < 4) { setLoginError('Enter the code we sent you.'); return; }
+    setLoginBusy(true); setLoginError('');
+    try {
+      const data = await postAuth('/auth/verify-otp', { identifier: loginId.trim(), otp });
+      applyUser(data.user);
+    } catch (e) { setLoginError(e.message); }
+    finally { setLoginBusy(false); }
+  };
+
+  const handleGoogleCredential = async (resp) => {
+    setLoginBusy(true); setLoginError('');
+    try {
+      const data = await postAuth('/auth/google', { credential: resp.credential });
+      applyUser(data.user);
+    } catch (e) { setLoginError(e.message); }
+    finally { setLoginBusy(false); }
+  };
+
+  // resend countdown
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setTimeout(() => setResendIn(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendIn]);
+
+  // render Google's button inside the popup
+  useEffect(() => {
+    if (!showLogin || loginStep !== 'identify' || !GOOGLE_CLIENT_ID) return;
+    const init = () => {
+      if (!window.google?.accounts?.id || !googleBtnRef.current) return;
+      window.google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCredential });
+      window.google.accounts.id.renderButton(googleBtnRef.current, { theme: 'outline', size: 'large', width: 300 });
+    };
+    if (window.google?.accounts?.id) { init(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.async = true;
+    s.onload = init;
+    document.head.appendChild(s);
+  }, [showLogin, loginStep]); // eslint-disable-line react-hooks/exhaustive-deps
+
+   // Validation before opening Modal
+
   // Validation before opening Modal
   const handlePayClick = () => {
     if (cart.length === 0) return;
@@ -236,6 +333,62 @@ const CheckoutPage = () => {
           </div>
         </div>
       )}
+
+      
+            {/* ── LOGIN POPUP ── */}
+      {showLogin && (
+        <div className="co-modal-overlay" onClick={closeLogin}>
+          <div className="co-modal-box" onClick={e => e.stopPropagation()} style={{ textAlign: 'left', maxWidth: 400 }}>
+            <h2 className="co-modal-title" style={{ textAlign: 'center' }}>Log in</h2>
+
+            {loginStep === 'identify' ? (
+              <>
+                <p className="co-modal-text" style={{ textAlign: 'center' }}>Enter the email or phone number on your account and we'll send you a one-time code.</p>
+                <input
+                  type="text" className="co-input co-input-plain" placeholder="Email or phone number"
+                  value={loginId} onChange={e => setLoginId(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSendOtp()} autoFocus
+                />
+                <button className="co-btn-confirm" style={{ width: '100%', marginTop: 12 }} onClick={handleSendOtp} disabled={loginBusy}>
+                  {loginBusy ? 'Sending…' : 'Send OTP'}
+                </button>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0', color: '#94a3b8', fontSize: 12 }}>
+                  <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} /> OR <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+                </div>
+
+                {GOOGLE_CLIENT_ID
+                  ? <div ref={googleBtnRef} style={{ display: 'flex', justifyContent: 'center' }} />
+                  : <p style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center' }}>Google login isn't configured yet.</p>}
+              </>
+            ) : (
+              <>
+                <p className="co-modal-text" style={{ textAlign: 'center' }}>Enter the code sent to <strong>{loginId}</strong>.</p>
+                <input
+                  type="tel" inputMode="numeric" maxLength={6} className="co-input co-input-plain"
+                  placeholder="6-digit code" value={otp}
+                  onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
+                  onKeyDown={e => e.key === 'Enter' && handleVerifyOtp()}
+                  style={{ letterSpacing: '0.3em', textAlign: 'center', fontSize: 18 }} autoFocus
+                />
+                <button className="co-btn-confirm" style={{ width: '100%', marginTop: 12 }} onClick={handleVerifyOtp} disabled={loginBusy}>
+                  {loginBusy ? 'Verifying…' : 'Verify & Log in'}
+                </button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, fontSize: 13 }}>
+                  <button type="button" onClick={() => { setLoginStep('identify'); setLoginError(''); }} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}>← Change</button>
+                  <button type="button" onClick={handleSendOtp} disabled={resendIn > 0 || loginBusy} style={{ background: 'none', border: 'none', color: resendIn > 0 ? '#94a3b8' : '#3b28cc', cursor: resendIn > 0 ? 'default' : 'pointer', fontWeight: 600 }}>
+                    {resendIn > 0 ? `Resend in ${resendIn}s` : 'Resend code'}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {loginError && <p style={{ color: '#dc2626', fontSize: 13, marginTop: 12, textAlign: 'center' }}>{loginError}</p>}
+            <button type="button" className="co-btn-cancel" style={{ width: '100%', marginTop: 14 }} onClick={closeLogin}>Cancel</button>
+          </div>
+        </div>
+      )}
+
 
       {/* ── HEADER ── */}
       <header className="co-header">
@@ -401,8 +554,19 @@ const CheckoutPage = () => {
               {/* Contact Information */}
               <div className="co-card">
                 <h3 className="co-section-title">Contact Information <span className="co-req">*</span></h3>
-                <p style={{fontSize: '13px', color: '#64748b', marginBottom: '16px'}}>We'll use this to send your order updates.</p>
-                
+                {loggedInUser ? (
+                  <p style={{ fontSize: '13px', color: '#166534', marginBottom: '16px' }}>
+                    ✓ Logged in as <strong>{loggedInUser.email || loggedInUser.phone}</strong>{' '}
+                    <button type="button" onClick={() => setLoggedInUser(null)} style={{ background: 'none', border: 'none', color: '#3b28cc', cursor: 'pointer', fontWeight: 600 }}>Not you?</button>
+                  </p>
+                ) : (
+                  <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px' }}>
+                    We'll use this to send your order updates. Already have an account?{' '}
+                    <button type="button" onClick={openLogin} style={{ background: 'none', border: 'none', padding: 0, color: '#3b28cc', cursor: 'pointer', fontWeight: 700, textDecoration: 'underline', fontSize: 'inherit' }}>
+                      Log in with existing account
+                    </button>
+                  </p>
+                )}
                 <div className="co-form-row">
                   <div className="co-form-group">
                     <label className="co-label">First Name</label>
