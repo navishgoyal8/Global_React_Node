@@ -166,38 +166,44 @@ exports.processCheckout = async (req, res) => {
           });
         }
       } else {
-        const productId = item.isCustomApparel
-          ? String(item.apparel?.productId || '').replace(/[^0-9]/g, '')
-          : item.id.toString().replace(/[^0-9]/g, '');
+        const rawProductId = item.isCustomApparel
+          ? (item.apparel?.productId ?? item.productId ?? item.id)
+          : item.id;
+
+        const productId = String(rawProductId ?? '').replace(/[^0-9]/g, '');
+
+        if (!productId) {
+          throw new Error(`Cart item "${item.id}" has no valid product id`);
+        }
         const [productRows] = await connection.query('SELECT id, display_name, name, qty, dp, ndr, category_id FROM products WHERE id = ? FOR UPDATE', [productId]);
-       
+
         if (productRows.length === 0) {
-           throw new Error(`Product not found for cart item "${item.id}" (looked up id "${productId}")`);
+          throw new Error(`Product not found for cart item "${item.id}" (looked up id "${productId}")`);
         }
-       
-          const product = productRows[0];
-          // Custom apparel (tee configurator) keeps its own price and bundle qty;
-          // it is not repriced from the seat-cover dp/ndr columns.
-          const isApparel = !!item.isCustomApparel;
-          const actualPrice = isApparel
-            ? parseFloat(item.price || 0)
-            : parseFloat(product.dp > 0 ? product.dp : (product.ndr || 0));
-          physicalSubtotal += (actualPrice * item.qty);
-          totalPhysicalItems += item.qty;
-          physicalItems.push({
-            ...item,
-            productId: product.id,
-            dbName: product.display_name || product.name,
-            actualPrice: actualPrice,
-            isCustomApparel: isApparel,
-            stockAfter: isApparel ? null : product.qty - item.qty,
-            categoryId: product.category_id || 0
-          });
-        }
+
+        const product = productRows[0];
+        // Custom apparel (tee configurator) keeps its own price and bundle qty;
+        // it is not repriced from the seat-cover dp/ndr columns.
+        const isApparel = !!item.isCustomApparel;
+        const actualPrice = isApparel
+          ? parseFloat(item.price || 0)
+          : parseFloat(product.dp > 0 ? product.dp : (product.ndr || 0));
+        physicalSubtotal += (actualPrice * item.qty);
+        totalPhysicalItems += item.qty;
+        physicalItems.push({
+          ...item,
+          productId: product.id,
+          dbName: product.display_name || product.name,
+          actualPrice: actualPrice,
+          isCustomApparel: isApparel,
+          stockAfter: isApparel ? null : product.qty - item.qty,
+          categoryId: product.category_id || 0
+        });
       }
-    
+    }
+
     if (physicalItems.length === 0 && digitalItems.length === 0) {
-      throw new Error('No valid items found in cart.'); 
+      throw new Error('No valid items found in cart.');
     }
 
     // Shipping Math
@@ -284,9 +290,9 @@ exports.processCheckout = async (req, res) => {
 
       const physicalOrderId = orderResult.insertId;
       await connection.query(
-  `UPDATE orders SET tax_amount = ?, shipping_amount = ?, discount_amount = 0 WHERE id = ?`,
-  [tax, shipping, physicalOrderId]
-);
+        `UPDATE orders SET tax_amount = ?, shipping_amount = ?, discount_amount = 0 WHERE id = ?`,
+        [tax, shipping, physicalOrderId]
+      );
 
       for (let item of physicalItems) {
         const totalValue = item.actualPrice * item.qty;

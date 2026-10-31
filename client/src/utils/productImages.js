@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL, FRONTEND_URL } from '../config';
 
 // Product photos live under `sales/uploads/products/` on the PHP server. The
 // filename stored in products.image is only a bare name (JSON array), so it has
@@ -6,7 +6,7 @@ import { API_BASE_URL } from '../config';
 // uploaded (local XAMPP vs. the live server) it can exist on either host, so we
 // keep both bases and let <SmartImage> walk through them on load failure.
 const LOCAL_BASE = 'http://localhost/globallimos/sales/uploads/products/';
-const REMOTE_BASE = 'https://developer.globallimos.com/sales/uploads/products/';
+const REMOTE_BASE = `https://${FRONTEND_URL}/sales/uploads/products/`;
 
 const isLocalApi = (() => {
   try {

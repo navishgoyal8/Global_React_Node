@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import { API_BASE_URL } from '../../config';
+import { API_BASE_URL, FRONTEND_URL } from '../../config';
 import AddNewCardModal from '../../components/Invoices/AddNewCardModal';
 import EditCartModal from '../../components/Invoices/EditCartModal';
 import InlineItemPicker from '../../components/Invoices/InlineItemPicker';
@@ -211,7 +211,7 @@ const couponSignatureFor = (items) =>
 // client/.env.development for local browser tests). Keep `tokenHeader`
 // matching the custom header used in your Postman collection.
 const PAY_LINK_EMAIL = {
-  baseUrl: 'https://developer.globallimos.com/sales',
+  baseUrl: `https://${FRONTEND_URL}/sales`,
   token: import.meta.env.VITE_CRM_TOKEN || '',
   tokenHeader: 'x-crm-token', // change this to match your Postman custom header name
   endpoints: {

@@ -20,6 +20,10 @@ const QrCodeIcon = makeIcon(<><rect x="3" y="3" width="7" height="7" rx="1"/><re
 const FileTextIcon = makeIcon(<><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></>);
 const RotateIcon = makeIcon(<><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></>);
 
+
+const MAX_LOGO_MB = 5;
+const UPLOAD_TIMEOUT_MS = 60000;
+
 const readDraft = (key) => {
   try { return JSON.parse(localStorage.getItem(key)) || null; } catch { return null; }
 };
@@ -441,6 +445,12 @@ const bgImage = useMemo(() => {
 
   const handleUploadFile = (file) => {
     if (!file) return;
+
+    if (file.size > MAX_LOGO_MB * 1024 * 1024) {
+      alert(`Logo must be under ${MAX_LOGO_MB}MB. Yours is ${(file.size / 1024 / 1024).toFixed(1)}MB.`);
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = reader.result;

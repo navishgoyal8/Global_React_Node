@@ -9,14 +9,27 @@ const CART_ROUTE = '/sales/crm/cart'; // TODO: change to your real cart route
 
 const SHIPPING_NOTE = 'Free shipping'; // set to '' to hide the line
 
-
+const QTY_KEY = (pid) => `apparel-qty:${pid}`;
+const readSavedQty = (pid) => {
+  try { return JSON.parse(sessionStorage.getItem(QTY_KEY(pid))) || null; } catch { return null; }
+};
 
 export default function ApparelQuantity() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { state } = useLocation();
-  const { product, color, placement, currentBgImage, unitPrice, area, logoUrl, design, editingCartItemId, placementLabels, decoration } = state || {};  const [qty, setQty] = useState(state?.initialSizes || {});
+  const { product, color, placement, currentBgImage, unitPrice, area, logoUrl, design, editingCartItemId, placementLabels, decoration } = state || {};  
+  const [qty, setQty] = useState(() => {
+    if (state?.editingCartItemId) return state?.initialSizes || {};
+    return readSavedQty(id) || state?.initialSizes || {};
+  });
   const [chartOpen, setChartOpen] = useState(false);
+
+   useEffect(() => {
+    if (state?.editingCartItemId) return; // cart edits must not overwrite the configurator's numbers
+    const clean = Object.fromEntries(Object.entries(qty).filter(([, v]) => Number(v) > 0).map(([k, v]) => [k, Number(v)]));
+    try { sessionStorage.setItem(QTY_KEY(id), JSON.stringify(clean)); } catch {}
+  }, [qty, id, state?.editingCartItemId]);
 
   const missing = !product || !currentBgImage || !logoUrl || !design || !area;
 
@@ -95,6 +108,8 @@ export default function ApparelQuantity() {
      } catch(err) {
         console.error('Failed to save cart item in localstorage',err);
      }
+     
+    try { sessionStorage.removeItem(QTY_KEY(id)); } catch {}
     navigate(CART_ROUTE);
   };
 

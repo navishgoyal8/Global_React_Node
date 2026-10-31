@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import RefineSearchModal from '../../components/Inventory/RefineSearchModal';
 import './AssignLeadModal.css';
-import { API_BASE_URL } from '../../config';
+import { API_BASE_URL, FRONTEND_URL } from '../../config';
 import CrmQuickNav from '../../components/Navigation/CrmQuickNav';
 
 const AVAILABLE_COLORS = [
@@ -343,7 +343,7 @@ const AssignLeadPage = () => {
             if (imgFilename.startsWith('http')) {
               finalImgUrl = imgFilename;
             } else {
-              const SERVER_DOMAIN = "https://developer.globallimos.com/sales";
+              const SERVER_DOMAIN = `https://${FRONTEND_URL}/sales`;
               const IMAGE_FOLDER = "/uploads/products/";
               finalImgUrl = `${SERVER_DOMAIN}${IMAGE_FOLDER}${imgFilename}`;
             }
@@ -1676,7 +1676,7 @@ const AssignLeadPage = () => {
                     {selectedVehicles.length === 0 && <div style={{ fontSize: '13px', color: '#9ca3af', fontStyle: 'italic' }}>No vehicles selected. Click the search bar above to add vehicles.</div>}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', marginTop: '16px' }}>
-                    <button className="text-link" onClick={() => window.open(`https://developer.globallimos.com/sales/all-listing`, '_blank')}>View all vehicles</button>
+                    <button className="text-link" onClick={() => window.open(`https://${FRONTEND_URL}/sales/all-listing`, '_blank')}>View all vehicles</button>
                   </div>
                 </div>
               </div>

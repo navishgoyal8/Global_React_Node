@@ -51,6 +51,7 @@ const PlayIcon = makeIcon(<polygon points="6 4 20 12 6 20 6 4" />);
 const StarIcon = makeIcon(<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />);
 const UsersIcon = makeIcon(<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>);
 const PencilIcon = makeIcon(<><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></>);
+const InstagramIcon = makeIcon(<><rect x="2" y="2" width="20" height="20" rx="5" /><circle cx="12" cy="12" r="4" /><path d="M17.5 6.5h.01" /></>);
 
 // ── DATA & HELPERS ───────────────────────────────────────────────────────────
 const DEFAULT_SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
@@ -373,11 +374,12 @@ const DesignUploadArea = ({ logo, onOpenEditor, onRemove }) => {
 
 // ── CONTACT OPTIONS ── fill in your real details. An option with an empty value is hidden.
 const CONTACT = {
-  whatsapp: '+919501181265',   // number with country code, e.g. '15551234567'
-  messenger: 'navishgoyal8',  // your Facebook page username or id, e.g. 'yourpage'
-  phone: '+919501181265',      // used for both Call and Text, e.g. '+15551234567'
-  email: 'goyalnavish125@gmail.com',      // e.g. 'sales@yourcompany.com'
-};
+  whatsapp: '19167506452',                        
+  messenger: 'p/Global-Customs-100075705472987',  
+  instagram: 'global_customs_us',                 
+  phone: '+19167506452',                          
+  email: 'globalcustoms77@gmail.com',
+ };
 
 const ContactModal = ({ open, onClose, productName }) => {
   useEffect(() => {
@@ -401,6 +403,8 @@ const ContactModal = ({ open, onClose, productName }) => {
       href: `https://wa.me/${waNumber}?text=${encodeURIComponent(`${msg}\n${page}`)}` },
     CONTACT.messenger && { key: 'ms', title: 'Facebook Messenger', sub: 'Message our page', color: '#0084ff', icon: MessageCircleIcon, external: true,
       href: `https://m.me/${CONTACT.messenger}` },
+    CONTACT.instagram && { key: 'ig', title: 'Instagram', sub: 'Message us on Instagram', color: '#e1306c', icon: InstagramIcon, external: true,
+      href: `https://ig.me/m/${CONTACT.instagram}` },
     tel && { key: 'sms', title: 'Text', sub: CONTACT.phone, color: '#0ea5e9', icon: MessageSquareIcon,
       href: `sms:${tel}?&body=${encodeURIComponent(msg)}` },
     CONTACT.email && { key: 'em', title: 'Email', sub: CONTACT.email, color: '#f97316', icon: MailIcon,
@@ -469,6 +473,12 @@ const addCustomTeeToStoredCart = (product, config) => {
     console.error('[cart] save failed', err);
   }
 };
+
+const QTY_KEY = (pid) => `apparel-qty:${pid}`;
+const readSavedQty = (pid) => {
+  try { return JSON.parse(sessionStorage.getItem(QTY_KEY(pid))) || {}; } catch { return {}; }
+};
+
 
 // ── MAIN CONFIGURATOR PAGE COMPONENT ─────────────────────────────────────────
 export default function CustomTeeConfigurator({ cart = [], handleCustomTeeAdd, goToCart, onBack }) {
@@ -570,9 +580,14 @@ const minOrder = useMemo(() => {
   }, [availablePlacements]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [quantities, setQuantities] = useState(() => {
-    const init = {}; sizes.forEach(s => { init[s] = 0; }); return init;
+   const saved = readSavedQty(id);
+   const init = {}; sizes.forEach(s => { init[s] = Number(saved[s]) || 0; }); return init;
   });
   
+  useEffect(() => {
+    try { sessionStorage.setItem(QTY_KEY(id), JSON.stringify(quantities)); } catch {}
+  }, [quantities, id]);
+
   const [activeColor, setActiveColor] = useState(0);
   const [decoration, setDecoration] = useState(DECORATIONS[0]);
   const [placement, setPlacement] = useState(availablePlacements[0] ? availablePlacements[0].id : 'Custom');
@@ -714,7 +729,9 @@ const overlays = [
         currentBgImage: currentBgImage,
         unitPrice: customizedUnit,
         placementLabels: selectedPlacements.map((p) => p.label),
-        decoration
+        decoration,
+        initialSizes: Object.fromEntries(Object.entries(quantities).filter(([, v]) => v > 0))
+
       }
     });
   };
@@ -783,6 +800,7 @@ const overlays = [
     };
     if(handleCustomTeeAdd) handleCustomTeeAdd(product,config)
     else addCustomTeeToStoredCart(product,config)
+    try { sessionStorage.removeItem(QTY_KEY(id)); } catch {}
     showToast('Added to cart ✓');
     setTimeout(() => (goToCart ? goToCart() : navigate('/sales/crm/cart')), 900);
   };
@@ -1124,12 +1142,12 @@ const hasChart = !!chartImage || sizeChartRows.some((s) => Object.values(s.chart
             </div>
 
             {/* Size + quantity */}
-            <h3 className="tc-h">Size</h3>
+            {/* <h3 className="tc-h">Size</h3>
             <div className="tc-pills">
               {sizes.map((s, i) => (
                 <button key={s} type="button" className={`tc-pill round ${(quantities[s] || 0) > 0 ? 'on' : ''}`} onClick={() => focusQty(i)}>{s}</button>
               ))}
-            </div>
+            </div> */}
             {hasChart && (
               <div className="tc-chart-row">
                 <button type="button" className="tc-chart-link" onClick={() => setChartOpen(true)}><RulerIcon size={20} /> Size Chart</button>
@@ -1143,7 +1161,11 @@ const hasChart = !!chartImage || sizeChartRows.some((s) => Object.values(s.chart
                   <label key={s} className="tc-qcell" htmlFor={`tc-qty-${i}`}>
                     <span>{s}</span>
                     <input
-                      id={`tc-qty-${i}`} type="number" min="0" value={quantities[s] || 0}
+                      id={`tc-qty-${i}`} 
+                      type="number" 
+                      min="0" 
+                      value={quantities[s] || ''}
+                      placeholder='0'
                       onChange={(e) => { const v = Math.max(0, parseInt(e.target.value || '0', 10) || 0); setQuantities((q) => ({ ...q, [s]: v })); }}
                     />
                     {sizeExtra(s) > 0 && <em>+ ${sizeExtra(s).toFixed(2)}</em>}

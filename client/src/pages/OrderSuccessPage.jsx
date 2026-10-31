@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './CheckoutPage.css'; 
+import { FRONTEND_URL } from '../config';
 // import { API_BASE_URL } from '../config';
 
 const OrderSuccessPage = () => {
@@ -20,12 +21,12 @@ const OrderSuccessPage = () => {
   const [showHybridModal, setShowHybridModal] = useState(isHybrid);
 
   const seatCoversUrl = autoLoginToken 
-    ? `https://developer.globallimos.com/sales/orders/all?token=${autoLoginToken}`
-    : `https://developer.globallimos.com/sales/orders/all`;
+    ? `https://${FRONTEND_URL}/sales/orders/all?token=${autoLoginToken}`
+    : `https://${FRONTEND_URL}/sales/orders/all`;
     
   const membershipsUrl = autoLoginToken
-    ? `https://developer.globallimos.com/sales/users/myPurchaseHistory?token=${autoLoginToken}`
-    : `https://developer.globallimos.com/sales/users/myPurchaseHistory`;
+    ? `https://${FRONTEND_URL}/sales/users/myPurchaseHistory?token=${autoLoginToken}`
+    : `https://${FRONTEND_URL}/sales/users/myPurchaseHistory`;
 
   // Auto-redirect logic
   useEffect(() => {

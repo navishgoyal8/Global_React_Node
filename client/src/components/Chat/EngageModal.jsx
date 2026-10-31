@@ -39,7 +39,7 @@ const EngageModal = ({ isOpen, onClose, lead, initialTab = 'messages' }) => {
   useEffect(() => {
     if (!lead) return; 
 
-    const socket = io('https://developer.globallimos.com');
+    const socket = io('https://globallimos.com');
 
     socket.on('new_incoming_message', (newMsg) => {
       console.log("Live message received!", newMsg);

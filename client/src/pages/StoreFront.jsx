@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL, FRONTEND_URL } from '../config';
 import './Storefront.css';
 
 // ── IMPORT OUR COMPONENTS ──
@@ -535,7 +535,7 @@ const Storefront = () => {
 
             let finalGallery = imagesArray.map(imgStr => {
               let str = imgStr.replace(/['"\[\]]+/g, '').trim();
-              return str.startsWith('http') ? str : `https://developer.globallimos.com/sales/uploads/products/${str}`;
+              return str.startsWith('http') ? str : `https://${FRONTEND_URL}/sales/uploads/products/${str}`;
             });
 
             if (finalGallery.length === 0) finalGallery = ['https://placehold.co/800x600/f3f4f6/9ca3af?text=No+Img'];
@@ -918,33 +918,10 @@ const Storefront = () => {
             </div>
           </div>
 
-          <div style={{ marginBottom: '30px' }}>
-            <h4 className="pd-section-title">How To Install</h4>
-            <p style={{ fontSize: '14px', color: '#475569', marginBottom: '15px', lineHeight: 1.5 }}>You can hire an upholstery person or have your team do the install.</p>
-            <div className="pd-steps-row">
-              <div className="pd-step"><div className="pd-step-num">1</div> Remove seat from frame.</div>
-              <div className="pd-step"><div className="pd-step-num">2</div> Remove old cover.</div>
-              <div className="pd-step"><div className="pd-step-num">3</div> Keep velcro intact and install new covers.</div>
-            </div>
-          </div>
-
-          <div style={{ marginBottom: '30px' }}>
-            <h4 className="pd-section-title">Pricing</h4>
-            <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.5 }}>We offer better pricing than competitors — and of course better quality.</p>
-          </div>
-
-          <div style={{ marginBottom: '40px' }}>
-            <h4 className="pd-section-title">Production & Shipping</h4>
-            <p style={{ fontSize: '14px', color: '#475569', marginBottom: '15px', lineHeight: 1.5 }}>Most orders are made after purchase to ensure a precise fit and quality finish.</p>
-            <div className="pd-steps-row">
-              <div className="pd-step"><div className="pd-step-num">1</div><span>1–2 Weeks Production</span></div>
-              <div className="pd-step"><div className="pd-step-num">2</div><span>3–4 Days Shipping</span></div>
-              <div className="pd-step"><div className="pd-step-num">3</div><span>Within 3 Weeks Delivered</span></div>
-            </div>
-          </div>
+         
 
           {/* Variants & Video */}
-          <div className="pd-action-grid">
+          <div className="pd-action-grid" style={{ marginBottom: '30px'}}>
             <div>
               {/* Faux Leather Color */}
               <div style={{ marginBottom: '20px' }}>
@@ -1036,6 +1013,30 @@ const Storefront = () => {
               <button style={{ width: '100%', background: '#4c1d95', color: '#fff', border: 'none', padding: '14px', borderRadius: '10px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                 <PlayCircleIcon /> Watch Video
               </button>
+            </div>
+          </div>
+           <div style={{ marginBottom: '30px' }}>
+            <h4 className="pd-section-title">How To Install</h4>
+            <p style={{ fontSize: '14px', color: '#475569', marginBottom: '15px', lineHeight: 1.5 }}>You can hire an upholstery person or have your team do the install.</p>
+            <div className="pd-steps-row">
+              <div className="pd-step"><div className="pd-step-num">1</div> Remove seat from frame.</div>
+              <div className="pd-step"><div className="pd-step-num">2</div> Remove old cover.</div>
+              <div className="pd-step"><div className="pd-step-num">3</div> Keep velcro intact and install new covers.</div>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '30px' }}>
+            <h4 className="pd-section-title">Pricing</h4>
+            <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.5 }}>We offer better pricing than competitors — and of course better quality.</p>
+          </div>
+
+          <div style={{ marginBottom: '40px' }}>
+            <h4 className="pd-section-title">Production & Shipping</h4>
+            <p style={{ fontSize: '14px', color: '#475569', marginBottom: '15px', lineHeight: 1.5 }}>Most orders are made after purchase to ensure a precise fit and quality finish.</p>
+            <div className="pd-steps-row">
+              <div className="pd-step"><div className="pd-step-num">1</div><span>1–2 Weeks Production</span></div>
+              <div className="pd-step"><div className="pd-step-num">2</div><span>3–4 Days Shipping</span></div>
+              <div className="pd-step"><div className="pd-step-num">3</div><span>Within 3 Weeks Delivered</span></div>
             </div>
           </div>
         </div>

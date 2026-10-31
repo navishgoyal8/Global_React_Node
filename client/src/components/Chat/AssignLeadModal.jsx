@@ -4,6 +4,7 @@ import { io } from 'socket.io-client';
 import RefineSearchModal from '../Inventory/RefineSearchModal';
 import './AssignLeadModal.css';
 import { API_BASE_URL } from '../../services/api';
+import { FRONTEND_URL } from '../../config';
 
 const AssignLeadModal = ({ isOpen, onClose, lead, existingLeadData, onLeadSaved }) => {
 
@@ -68,6 +69,7 @@ const AssignLeadModal = ({ isOpen, onClose, lead, existingLeadData, onLeadSaved 
   const [leadStatus, setLeadStatus] = useState('');
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  // const frontendUrl = import.env.meta.
 
   const LEAD_STATUSES = [
     { id: 'Intake', icon: '🔵' },
@@ -214,7 +216,7 @@ const AssignLeadModal = ({ isOpen, onClose, lead, existingLeadData, onLeadSaved 
   useEffect(() => {
     if (!isOpen || !lead) return;
 
-    const socket = io('https://developer.globallimos.com');
+    const socket = io(FRONTEND_URL);
 
     socket.on('new_incoming_message', (incomingMsg) => {
       const leadPhoneShort = lead.id ? lead.id.slice(-10) : '';
@@ -855,7 +857,7 @@ const AssignLeadModal = ({ isOpen, onClose, lead, existingLeadData, onLeadSaved 
                       {selectedVehicles.length === 0 && (<div style={{ fontSize: '13px', color: '#9ca3af', fontStyle: 'italic' }}>No vehicles selected. Click the search bar above to add vehicles.</div>)}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', marginTop: '16px' }}>
-                      <button className="text-link" onClick={() => window.open('https://developer.globallimos.com/sales/all-listing', '_blank')}>View all vehicles</button>
+                      <button className="text-link" onClick={() => window.open(`https://${FRONTEND_URL}/sales/all-listing`, '_blank')}>View all vehicles</button>
                     </div>
                   </div>
                 </div>
