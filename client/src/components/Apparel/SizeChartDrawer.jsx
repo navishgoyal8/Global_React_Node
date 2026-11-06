@@ -60,6 +60,7 @@ const SizeChartDrawer = ({ open, onClose, sizes, image, chartImage }) => {
         .sc-table th:first-child { position: sticky; left: 0; background: #fff; min-width: 110px; white-space: normal; font-weight: 400; }
         .sc-table thead th:first-child { font-weight: 700; }
         .sc-table th span { display: block; font-size: 14px; color: #64748b; }
+        .sc-diagram .sc-chart-img { max-width: 100%; }
         @keyframes sc-slide { from { transform: translateX(100%); } to { transform: none; } }
         @keyframes sc-fade { from { opacity: 0; } to { opacity: 1; } }
         @media (max-width: 600px) {
@@ -74,33 +75,30 @@ const SizeChartDrawer = ({ open, onClose, sizes, image, chartImage }) => {
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18" /><path d="M6 6l12 12" /></svg>
         </button>
 
-        {chartImage ? (
-          <>
-            <h2 className="sc-title">Size Chart</h2>
-            <img className="sc-chart-img" src={chartImage} alt="Size chart" />
-          </>
-        ) : (
-          <>
-            <div className="sc-diagram">{image ? <img src={image} alt="Size guide" /> : <SizeDiagram />}</div>
-            <h2 className="sc-title">Size Chart</h2>
+        <div className="sc-diagram">
+          {chartImage
+            ? <img className="sc-chart-img" src={chartImage} alt="Size chart" />
+            : image
+              ? <img src={image} alt="Size guide" />
+              : <SizeDiagram />}
+        </div>
+        <h2 className="sc-title">Size Chart</h2>
 
-            <div className="sc-scroll">
-              <table className="sc-table">
-                <thead>
-                  <tr><th>Size</th>{sizes.map((s) => <th key={s.label}>{s.label}</th>)}</tr>
-                </thead>
-                <tbody>
-                  {rows.map((m) => (
-                    <tr key={m.key}>
-                      <th scope="row">{m.label}<span>(in/cm)</span></th>
-                      {sizes.map((s) => <td key={s.label}>{fmt(s.chart?.[m.key])}</td>)}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
+        <div className="sc-scroll">
+          <table className="sc-table">
+            <thead>
+              <tr><th>Size</th>{sizes.map((s) => <th key={s.label}>{s.label}</th>)}</tr>
+            </thead>
+            <tbody>
+              {rows.map((m) => (
+                <tr key={m.key}>
+                  <th scope="row">{m.label}<span>(in/cm)</span></th>
+                  {sizes.map((s) => <td key={s.label}>{fmt(s.chart?.[m.key])}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </aside>
     </div>
   );

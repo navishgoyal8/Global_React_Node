@@ -97,7 +97,7 @@ const EditCartModal = ({ isOpen, onClose, onSave, cartItems, adPackages, listing
           let finalImgUrl = 'https://via.placeholder.com/60x80/e5e7eb/9ca3af?text=No+Img';
           if (imgFilename) {
             if (imgFilename.startsWith('http')) finalImgUrl = imgFilename;
-            else finalImgUrl = `https://${FRONTEND_URL}/sales/uploads/products/${imgFilename}`;
+            else finalImgUrl = `${FRONTEND_URL}/sales/uploads/products/${imgFilename}`;
           }
           return {
             id: p.id,

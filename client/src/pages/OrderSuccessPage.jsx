@@ -21,12 +21,12 @@ const OrderSuccessPage = () => {
   const [showHybridModal, setShowHybridModal] = useState(isHybrid);
 
   const seatCoversUrl = autoLoginToken 
-    ? `https://${FRONTEND_URL}/sales/orders/all?token=${autoLoginToken}`
-    : `https://${FRONTEND_URL}/sales/orders/all`;
+    ? `${FRONTEND_URL}/sales/orders/all?token=${autoLoginToken}`
+    : `${FRONTEND_URL}/sales/orders/all`;
     
   const membershipsUrl = autoLoginToken
-    ? `https://${FRONTEND_URL}/sales/users/myPurchaseHistory?token=${autoLoginToken}`
-    : `https://${FRONTEND_URL}/sales/users/myPurchaseHistory`;
+    ? `${FRONTEND_URL}/sales/users/myPurchaseHistory?token=${autoLoginToken}`
+    : `${FRONTEND_URL}/sales/users/myPurchaseHistory`;
 
   // Auto-redirect logic
   useEffect(() => {

@@ -5,6 +5,7 @@ import { toSafeHtml } from '../../utils/richText';
 import SizeChartDrawer from '../Apparel/SizeChartDrawer'; // adjust both paths to where you put these files
 import { getSizes } from '../Apparel/apparelPricing';
 import { primaryImageUrl } from '../../utils/productImages';
+import { compressImage } from '../../utils/compressImage';
 
 // ── LOCAL ICONS ──────────────────────────────────────────────────────────────
 const makeIcon = (children) => {
@@ -146,6 +147,8 @@ const parseColors = (colorsField) => {
 //   const baseUrl = API_BASE_URL ? API_BASE_URL.split('/api')[0] : 'https://developer.globallimos.com/sales';
 //   return `${baseUrl}/uploads/products/${clean}`;
 // };
+
+// Shrinks big photos/logos before upload. Keeps PNG transparency; skips SVGs and small files.
 
 const resolveImageUrl = (img) => {
   const clean = String(img || '').replace(/['"[\]]/g, '').trim();
@@ -503,7 +506,7 @@ export default function CustomTeeConfigurator({ cart = [], handleCustomTeeAdd, g
         ...prev,
         colors: fresh.colors ?? prev.colors,
         sizes: fresh.sizes ?? prev.sizes,
-        size_chart_mode: fresh.size_chart_mode === 'image' ? 'image' : 'table',
+        // size_chart_mode: fresh.size_chart_mode === 'image' ? 'image' : 'table',
         size_chart_image: fresh.size_chart_image ?? null,
       }) : fresh);
     })
@@ -748,25 +751,28 @@ const overlays = [
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2600); };
 
-  const handleUpload = (file) => {
-    if (!file) return;
-    if (file.size > MAX_LOGO_MB * 1024 * 1024) { showToast(`Logo must be under ${MAX_LOGO_MB}MB.`); return; }
+  const handleUpload = async (file) => {
+  if (!file) return;
+  if (file.size > MAX_LOGO_MB * 1024 * 1024) { showToast(`Logo must be under ${MAX_LOGO_MB}MB.`); return; }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result;
-      const preview = URL.createObjectURL(file);
-      setLogo({ url: '', preview });
-      setUploading(true);
-      fetch(`${API_BASE_URL}/uploads/apparel-logo`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileName: file.name, dataUrl }),
-      })
-      .then(res => res.json())
-      .then(data => {
+  setUploading(true);
+  const small = await compressImage(file);
+  const preview = URL.createObjectURL(small);
+  setLogo({ url: '', preview });
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    fetch(`${API_BASE_URL}/uploads/apparel-logo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileName: file.name, dataUrl: reader.result }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
         if (data?.success) {
-          setLogo({ url: `${ORIGIN}${data.url}`, preview });
+          // Cloudinary returns a full https URL; older local uploads returned a path
+          const full = /^https?:\/\//i.test(data.url) ? data.url : `${ORIGIN}${data.url}`;
+          setLogo({ url: full, preview });
           showToast('Design uploaded ✓');
         } else {
           setLogo(null);
@@ -775,9 +781,10 @@ const overlays = [
       })
       .catch(() => { setLogo(null); showToast('Upload failed — check connection.'); })
       .finally(() => setUploading(false));
-    };
-    reader.readAsDataURL(file);
   };
+  reader.onerror = () => { setLogo(null); setUploading(false); showToast('Could not read the file.'); };
+  reader.readAsDataURL(small);
+};
 
   const removeLogo = () => {
     if (logo && logo.preview) URL.revokeObjectURL(logo.preview);
@@ -829,8 +836,7 @@ const overlays = [
 
   const [chartOpen, setChartOpen] = useState(false);
   const sizeChartRows = useMemo(() => getSizes(product), [product]);
-const chartImage = product?.size_chart_mode === 'image' ? (resolveImageUrl(product?.size_chart_image) || null) : null;
-const hasChart = !!chartImage || sizeChartRows.some((s) => Object.values(s.chart || {}).some((v) => v != null && v !== ''));  const focusQty = (i) => document.getElementById(`tc-qty-${i}`)?.focus();
+  const chartImage = resolveImageUrl(product?.size_chart_image) || null;const hasChart = !!chartImage || sizeChartRows.some((s) => Object.values(s.chart || {}).some((v) => v != null && v !== ''));  const focusQty = (i) => document.getElementById(`tc-qty-${i}`)?.focus();
   const hasMore = (product?.listDescription || '').length > 140 || !!detailHtml;
   const rating = num(product?.rating);
   const reviewCount = num(product?.review_count ?? product?.reviews_count);
@@ -1249,7 +1255,10 @@ const hasChart = !!chartImage || sizeChartRows.some((s) => Object.values(s.chart
       </main>
 
       <ContactModal open={contactOpen} onClose={() => setContactOpen(false)} productName={productName} />
-    <SizeChartDrawer open={chartOpen} onClose={() => setChartOpen(false)} sizes={sizeChartRows} chartImage={chartImage} />
+    <SizeChartDrawer 
+      open={chartOpen} 
+      onClose={() => setChartOpen(false)} 
+      sizes={sizeChartRows} chartImage={chartImage} />
       {toast && (
         <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: '#0f172a', color: '#fff', padding: '12px 20px', borderRadius: 12, fontSize: 13, fontWeight: 600, zIndex: 9999, boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
           {toast}

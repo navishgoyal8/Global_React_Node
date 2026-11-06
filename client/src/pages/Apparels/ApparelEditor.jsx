@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { API_BASE_URL } from '../../config';
 import { primaryImageUrl } from '../../utils/productImages';   // add to the imports at the top
+import { compressImage } from '../../utils/compressImage';
 
 // ── ICONS ────────────────────────────────────────────────────────────────────
 const makeIcon = (children) => {
@@ -443,41 +444,52 @@ const bgImage = useMemo(() => {
   const k = 1 / scale;
   const zoomBtn = { border: 'none', background: 'transparent', fontSize: 18, fontWeight: 700, width: 32, height: 32, cursor: 'pointer', color: '#0f172a' };
 
-  const handleUploadFile = (file) => {
-    if (!file) return;
+  const handleUploadFile = async (file) => {
+  if (!file || uploading) return;
 
-    if (file.size > MAX_LOGO_MB * 1024 * 1024) {
-      alert(`Logo must be under ${MAX_LOGO_MB}MB. Yours is ${(file.size / 1024 / 1024).toFixed(1)}MB.`);
-      return;
+  if (file.size > MAX_LOGO_MB * 1024 * 1024) {
+    alert(`Logo must be under ${MAX_LOGO_MB}MB. Yours is ${(file.size / 1024 / 1024).toFixed(1)}MB.`);
+    return;
+  }
+
+  setUploading(true);
+  try {
+    const small = await compressImage(file);
+    console.log('original KB:', Math.round(file.size / 1024), 'compressed KB:', Math.round(small.size / 1024), small.type);
+    const preview = URL.createObjectURL(small);   // the editor now also works on the small image
+
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(small);
+    });
+
+    console.log('payload KB: ', Math.round(dataUrl.length / 1024))
+
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), UPLOAD_TIMEOUT_MS);
+    const res = await fetch(`${API_BASE_URL}/uploads/apparel-logo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileName: file.name, dataUrl }),
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(timer));
+
+    const data = await res.json();
+    if (data?.success) {
+      setInitialDesign(null);
+      setLogo({ url: data.url, preview });
+      setIsModalOpen(false);
+    } else {
+      alert(data?.message || 'Upload failed.');
     }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result;
-      const preview = URL.createObjectURL(file);
-      setUploading(true);
-      
-      fetch(`${API_BASE_URL}/uploads/apparel-logo`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileName: file.name, dataUrl }),
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data?.success) {
-          
-          setInitialDesign(null);
-          setLogo({ url: data.url, preview });
-          setIsModalOpen(false);
-        } else {
-          alert(data?.message || 'Upload failed.');
-        }
-      })
-      .catch(() => alert('Upload failed. Check your connection.'))
-      .finally(() => setUploading(false));
-    };
-    reader.readAsDataURL(file);
-  };
+  } catch (err) {
+    alert(err?.name === 'AbortError' ? 'Upload timed out. Please try again.' : 'Upload failed. Check your connection.');
+  } finally {
+    setUploading(false);
+  }
+};
 
     const handleNext = () => {
     if (!logo || !design) { alert('Please upload a design first.'); return; }

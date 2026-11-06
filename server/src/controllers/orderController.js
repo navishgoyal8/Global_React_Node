@@ -85,6 +85,82 @@ const insertApparelDetails = async (connection, { orderId, orderItemId, productI
 // =========================================================================
 // PUBLIC CHECKOUT (STOREFRONT ROUTE)
 // =========================================================================
+
+const round2 = (n) => Math.round(n * 100) / 100;
+
+const createPhysicalOrder = async (connection, { userId, customerData, items, shipping, orderGroupRef }) => {
+  const subtotal = round2(items.reduce((s, it) => s + it.actualPrice * it.qty, 0));
+  const tax = round2(subtotal * 0.08);
+  const total = round2(subtotal + tax + shipping);
+
+  const busDetail = items.map(item => {
+    if (item.isCustomApparel) {
+      const cfg = item.apparel || {};
+      const sizes = Object.entries(cfg.sizes || {})
+        .filter(([, q]) => Number(q) > 0)
+        .map(([s, q]) => `${s} x${q}`)
+        .join(', ');
+      const bits = ['Custom', cfg.color, cfg.decoration, item.qty === 1 && sizes].filter(Boolean);
+      return `${item.dbName} x${item.qty} (${bits.join(' · ')})`;
+    }
+    return `${item.dbName} x${item.qty} (${item.selectedColor || 'Standard'} - ${item.selectedPattern || 'Standard'})`;
+  }).join(' | ');
+
+  const [orderResult] = await connection.query(
+    `INSERT INTO orders 
+    (user_id, type, business_name, firstname, lastname, email, phone_code, cellnumber, alt_phone,
+     bus_detail, bus_detail_2, broker, city_id, state_id, country_id, city, state, country, 
+     address, zipcode, order_city, order_state, order_country, order_zipcode, order_address, 
+     total_price, order_amount, payment_status, paid_amount, order_from, website_id, orders_status, status, is_deleted, created_on, created_by, modified_on) 
+    VALUES (?, 1, '', ?, ?, ?, 0, ?, 0, ?, ?, '', 0, 0, 0, ?, ?, '', ?, ?, ?, ?, '', ?, ?, ?, ?, 1, ?, 'website', 1, 1, 1, 0, NOW(), ?, NOW())`,
+    [
+      userId, customerData.firstName || '', customerData.lastName || '', customerData.email, customerData.phone || '',
+      busDetail, busDetail, customerData.city || '', customerData.state || '', customerData.address || '', customerData.zip || '',
+      customerData.city || '', customerData.state || '', customerData.zip || '', customerData.address || '',
+      subtotal.toString(), total, total, userId
+    ]
+  );
+  const orderId = orderResult.insertId;
+
+  await connection.query(
+    `UPDATE orders SET tax_amount = ?, shipping_amount = ?, discount_amount = 0, order_group_ref = ? WHERE id = ?`,
+    [tax, shipping, orderGroupRef, orderId]
+  );
+
+  for (const item of items) {
+    const totalValue = item.actualPrice * item.qty;
+    let lColor, sColor, patternCode, description;
+    if (item.isCustomApparel) {
+      const cfg = item.apparel || {};
+      description = `Custom · ${cfg.color || 'Standard'} · ${cfg.decoration || 'Decoration'} · ${cfg.placement || ''}`.slice(0, 250);
+      lColor = String(cfg.color || 'Standard').toLowerCase();
+      sColor = String(cfg.decoration || '').toLowerCase();
+      patternCode = String(cfg.placement || '').toLowerCase();
+    } else {
+      description = `${item.selectedColor || 'Standard'} - ${item.selectedPattern || 'Standard'}`;
+      lColor = mapVariantCode(item.selectedColor, 'color');
+      sColor = mapVariantCode(item.selectedStitching, 'color');
+      patternCode = mapVariantCode(item.selectedPattern, 'pattern');
+    }
+
+    const [itemResult] = await connection.query(
+      `INSERT INTO order_items 
+       (order_id, category, product, leather_color, stitch_color, pattern, description, ndr, discount, disc_price, qty, total_price, created_at) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, NOW())`,
+      [orderId, item.categoryId, item.productId, lColor, sColor, patternCode, description,
+       Math.round(item.actualPrice), Math.round(item.actualPrice), item.qty, Math.round(totalValue)]
+    );
+
+    if (item.isCustomApparel) {
+      await insertApparelDetails(connection, { orderId, orderItemId: itemResult.insertId, productId: item.productId, item });
+    } else {
+      await connection.query(`UPDATE products SET qty = ?, modified_on = NOW() WHERE id = ?`, [item.stockAfter, item.productId]);
+    }
+  }
+
+  return { orderId, subtotal, tax, shipping, total };
+};
+
 exports.processCheckout = async (req, res) => {
   const { cart, paymentMethod, customerData } = req.body;
   // console.log("cart",cart)
@@ -256,90 +332,34 @@ exports.processCheckout = async (req, res) => {
       }
     }
 
-    // ==========================================
-    // 4. PROCESS PHYSICAL SEAT COVERS
-    // ==========================================
-    if (physicalItems.length > 0) {
-      const busDetail = physicalItems.map(item => {
-        if (item.isCustomApparel) {
-          const cfg = item.apparel || {};
-          const sizes = Object.entries(cfg.sizes || {})
-            .filter(([, q]) => Number(q) > 0)
-            .map(([s, q]) => `${s} x${q}`)
-            .join(', ');
-          const bits = ['Custom', cfg.color, cfg.decoration, item.qty === 1 && sizes].filter(Boolean);
-          return `${item.dbName} x${item.qty} (${bits.join(' · ')})`;
-        }
-        return `${item.dbName} x${item.qty} (${item.selectedColor || 'Standard'} - ${item.selectedPattern || 'Standard'})`;
-      }).join(' | ');
+   const createdOrders = [];
+if (physicalItems.length > 0) {
+  const groups = [
+    physicalItems.filter(i => !i.isCustomApparel),   // seat covers
+    physicalItems.filter(i => i.isCustomApparel),    // apparel
+  ].filter(items => items.length > 0);
 
-      const [orderResult] = await connection.query(
-        `INSERT INTO orders 
-        (user_id, type, business_name, firstname, lastname, email, phone_code, cellnumber, alt_phone,
-         bus_detail, bus_detail_2, broker, city_id, state_id, country_id, city, state, country, 
-         address, zipcode, order_city, order_state, order_country, order_zipcode, order_address, 
-         total_price, order_amount, payment_status, paid_amount, order_from, website_id, orders_status, status, is_deleted, created_on, created_by, modified_on) 
-        VALUES (?, 1, '', ?, ?, ?, 0, ?, 0, ?, ?, '', 0, 0, 0, ?, ?, '', ?, ?, ?, ?, '', ?, ?, ?, ?, 1, ?, 'website', 1, 1, 1, 0, NOW(), ?, NOW())`,
-        [
-          userId, customerData.firstName || '', customerData.lastName || '', customerData.email, customerData.phone || '',
-          busDetail, busDetail, customerData.city || '', customerData.state || '', customerData.address || '', customerData.zip || '',
-          customerData.city || '', customerData.state || '', customerData.zip || '', customerData.address || '',
-          physicalSubtotal.toString(), physicalOrderTotal, physicalOrderTotal, userId
-        ]
-      );
+  let shippingLeft = shipping;
+  for (let i = 0; i < groups.length; i++) {
+    const items = groups[i];
+    const qty = items.reduce((s, it) => s + it.qty, 0);
+    const isLast = i === groups.length - 1;
+    const share = isLast ? shippingLeft : round2(shipping * qty / totalPhysicalItems);
+    shippingLeft = round2(shippingLeft - share);
 
-      const physicalOrderId = orderResult.insertId;
-      await connection.query(
-        `UPDATE orders SET tax_amount = ?, shipping_amount = ?, discount_amount = 0 WHERE id = ?`,
-        [tax, shipping, physicalOrderId]
-      );
-
-      for (let item of physicalItems) {
-        const totalValue = item.actualPrice * item.qty;
-
-        let lColor, sColor, patternCode, description;
-        if (item.isCustomApparel) {
-          const cfg = item.apparel || {};
-          // Short readable summary only; the full detail lives in order_item_apparel
-          description = `Custom · ${cfg.color || 'Standard'} · ${cfg.decoration || 'Decoration'} · ${cfg.placement || ''}`.slice(0, 250);
-          lColor = String(cfg.color || 'Standard').toLowerCase();
-          sColor = String(cfg.decoration || '').toLowerCase();
-          patternCode = String(cfg.placement || '').toLowerCase();
-        } else {
-          description = `${item.selectedColor || 'Standard'} - ${item.selectedPattern || 'Standard'}`;
-          lColor = mapVariantCode(item.selectedColor, 'color');
-          sColor = mapVariantCode(item.selectedStitching, 'color');
-          patternCode = mapVariantCode(item.selectedPattern, 'pattern');
-        }
-
-        const [itemResult] = await connection.query(
-          `INSERT INTO order_items 
-    (order_id, category, product, leather_color, stitch_color, pattern, description, ndr, discount, disc_price, qty, total_price, created_at) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, NOW())`,
-          [
-            physicalOrderId, item.categoryId, item.productId,
-            lColor, sColor, patternCode, description,
-            Math.round(item.actualPrice), Math.round(item.actualPrice),
-            item.qty, Math.round(totalValue)
-          ]
-        );
-
-        if (item.isCustomApparel) {
-          await insertApparelDetails(connection, {
-            orderId: physicalOrderId,
-            orderItemId: itemResult.insertId,
-            productId: item.productId,
-            item
-          });
-        } else {
-          await connection.query(`UPDATE products SET qty = ?, modified_on = NOW() WHERE id = ?`, [item.stockAfter, item.productId]);
-        }
-      }
-    }
+    createdOrders.push(await createPhysicalOrder(connection, {
+      userId, customerData, items, shipping: share, orderGroupRef: orderReference
+    }));
+  }
+}
 
     await connection.commit();
-    res.status(200).json({ success: true, message: "Order processed successfully", orderId: orderReference, autoLoginToken: loginToken });
-
+    res.status(200).json({ 
+        success: true, 
+        message: "Order processed successfully", 
+        orderId: orderReference, 
+        orderIds: createdOrders.map(o => o.orderId),
+        autoLoginToken: loginToken });
   } catch (error) {
     await connection.rollback();
     console.error("Checkout Error:", error);

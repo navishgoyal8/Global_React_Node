@@ -19,7 +19,8 @@ exports.uploadApparelLogo = async (req, res) => {
     // Upload the raw Base64 Data URI directly to Cloudinary
     const uploadResponse = await cloudinary.uploader.upload(dataUrl, {
       folder: 'globallimos_apparel', // Groups your files in a specific folder
-      resource_type: 'image'
+      resource_type: 'image',
+      transformation: [{ width: 2000, height: 2000, crop: 'limit', quality: 'auto' }]
     });
 
     // Cloudinary returns a publicly accessible, secure URL

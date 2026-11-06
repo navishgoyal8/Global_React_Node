@@ -169,6 +169,7 @@ const normalizeDbCartItem = (item) => {
     ? rawType
     : (/^\d+$/.test(String(rawType == null ? '' : rawType)) ? parseInt(rawType, 10) : null);
   const type = numericType != null ? (SALE_TYPE_TO_ITEM_TYPE[numericType] || rawType) : rawType;
+  const resolvedType = (numericType === 5 && item.sizes && typeof item.sizes === 'object') ? 'W' : type;
   const itemId = item.itemId != null ? item.itemId : (item.product_id != null ? item.product_id : item.id);
   return {
     ...item,
@@ -211,7 +212,7 @@ const couponSignatureFor = (items) =>
 // client/.env.development for local browser tests). Keep `tokenHeader`
 // matching the custom header used in your Postman collection.
 const PAY_LINK_EMAIL = {
-  baseUrl: `https://${FRONTEND_URL}/sales`,
+  baseUrl: `${FRONTEND_URL}/sales`,
   token: import.meta.env.VITE_CRM_TOKEN || '',
   tokenHeader: 'x-crm-token', // change this to match your Postman custom header name
   endpoints: {
@@ -740,6 +741,8 @@ const CreateInvoicePage = () => {
     return cartItems.some(i => i.type === 'P' || !i.type);
   }, [cartItems]);
 
+  const hasApparel = useMemo(() => cartItems.some(i => i.type === 'W'), [cartItems]);
+
   const hasAdItem = useMemo(() => {
     return cartItems.some(i => i.type === 'A' || i.id === 'ads-package');
   }, [cartItems]);
@@ -1101,6 +1104,7 @@ const CreateInvoicePage = () => {
             let loadedSubtotal = 0;
             let dbProductItems = [];
             let dbNonProductItems = [];
+            let dbApparelItems = [];
 
             if (inv.items_json) {
               try {
@@ -1111,7 +1115,8 @@ const CreateInvoicePage = () => {
                 const parsedItems = JSON.parse(inv.items_json)
                   .map(normalizeDbCartItem)
                   .map(i => (headerType === 6 && i && i.type !== 'P' ? { ...i, type: 'R' } : i));
-                dbNonProductItems = parsedItems.filter(i => i.type !== 'P');
+                dbApparelItems = parsedItems.filter(i => i.type === 'W');
+                dbNonProductItems = parsedItems.filter(i => i.type !== 'P' && i.type !== 'W');
                 dbProductItems = parsedItems.filter(i => i.type === 'P').map(p => {
                   const legacy = parseLegacySpecs(p.covers || p.description);
                   return {
@@ -1185,7 +1190,7 @@ const CreateInvoicePage = () => {
             const finalProductItems = hasExplicitState ? freshProductItems : (freshProductItems.length > 0 ? freshProductItems : dbProductItems);
             const finalNonProductItems = hasExplicitState ? combinedFreshNonProducts : (combinedFreshNonProducts.length > 0 ? combinedFreshNonProducts : dbNonProductItems);
 
-            const mergedItems = enforceSinglePackageKind([...finalNonProductItems, ...finalProductItems]);
+            const mergedItems = enforceSinglePackageKind([...finalNonProductItems, ...finalProductItems, ...dbApparelItems]);
             setCartItems(mergedItems);
             loadedSubtotal = mergedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
@@ -1372,7 +1377,16 @@ const CreateInvoicePage = () => {
     if (items.length > 0) setCartItems(enforceSinglePackageKind(items));
   }, [selectedListings, selectedMemberships, selectedProducts, selectedAdPackage, selectedAdFeatures, invoiceIdFromCRM, packagesLoaded, adPackages, listingPackages, membershipPackages]);
 
-  const TYPE_LABELS = { P: 'Seat Covers', L: 'Listings', M: 'Memberships', A: 'Ads Package', V: 'Vehicles', R: 'Renewals' };
+  const TYPE_LABELS = { 
+      P: 'Seat Covers', 
+      L: 'Listings', 
+      M: 'Memberships', 
+      A: 'Ads Package', 
+      V: 'Vehicles', 
+      R: 'Renewals',
+      W: 'Apparel' 
+  };
+
   const TYPE_TO_LINK_KEY = { L: 'listing', M: 'membership', A: 'ads' };
   const vehicleItems = cartItems.filter(i => i.type === 'V');
   const vehicleKey = (v) => String(v.id ?? v.itemId);
@@ -1380,7 +1394,7 @@ const CreateInvoicePage = () => {
   const referralFeeTotal = vehicleItems.reduce(
     (sum, v) => sum + (parseFloat(vehicleAgreements[vehicleKey(v)]?.referral?.amount) || 0), 0
   );
-  const itemizedGroups = ['P', 'L', 'M', 'A', 'V', 'R'].reduce((acc, type) => {
+  const itemizedGroups = ['P', 'L', 'M', 'A', 'V', 'R','W'].reduce((acc, type) => {
     const items = cartItems.filter(i => i.type === type);
     if (items.length > 0) {
       // Ads line = monthly rate × selected payment term months (e.g. 3 months
@@ -3086,7 +3100,8 @@ const CreateInvoicePage = () => {
     amountDueNow,
     paymentType,
     notes,
-    JSON.stringify(cartItems.map(i => [i.id, i.type, i.itemId, i.price, i.quantity, i.covers])),
+    JSON.stringify(cartItems.map(i => [i.id, i.type, i.itemId, i.price, i.quantity, i.covers,
+                  i.type === 'W' ? [i.color, i.sizes, i.decoration, i.modifyBy, i.options, i.placements, i.logoUrl, i.notes, i.supplierId] : null])),    
     JSON.stringify(allTexts.map(s => [s.id, s.date || s.send_date, s.time || s.send_time, s.discount ?? s.discount_offered ?? 0, s.attach_pay_link ?? s.attachPayLink ?? false, (s.messageBody || s.message_body || '').length])),
     JSON.stringify(allEmails.map(s => [s.id, s.date || s.send_date, s.time || s.send_time, s.discount ?? s.discount_offered ?? 0, s.attach_pay_link ?? s.attachPayLink ?? false, (s.messageBody || s.message_body || '').length])),
   ].join('|');
@@ -4399,12 +4414,17 @@ const CreateInvoicePage = () => {
                                 )}
                               </td>
                               <td style={{ textAlign: 'center' }}>
-                                <div className="qty-ctrl" style={{ margin: '0 auto' }}>
-                                  <button className="qty-btn" onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}>▲</button>
-                                  <input type="number" className="qty-num" value={item.quantity}
-                                    onChange={e => handleUpdateQuantity(item.id, e.target.value)} min="1" />
-                                  <button className="qty-btn" onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}>▼</button>
-                                </div>
+                                {item.type === 'W'
+                                ? <span style={{ fontWeight: 600 }}>{item.quantity} pcs</span>
+                                : (
+                                  <div className="qty-ctrl" style={{ margin: '0 auto' }}>
+                                    <button className="qty-btn" onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}>▲</button>
+                                    <input type="number" className="qty-num" value={item.quantity}
+                                      onChange={e => handleUpdateQuantity(item.id, e.target.value)} min="1" />
+                                    <button className="qty-btn" onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}>▼</button>
+                                  </div>
+                                )}
+                                
                               </td>
                               <td style={{ textAlign: 'right', color: '#374151' }}>
                                 <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -4438,6 +4458,19 @@ const CreateInvoicePage = () => {
                                 }} title="Remove item">✕</button>
                               </td>
                             </tr>
+                            {item.type === 'W' && (
+  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+    <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, background: '#f1f5f9', color: '#475569', fontWeight: 600 }}>Colour: {item.color || '-'}</span>
+    <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, background: '#ecfdf5', color: '#047857', fontWeight: 600 }}>
+      {Object.entries(item.sizes || {}).filter(([, q]) => q > 0).map(([s, q]) => `${s}:${q}`).join('  ') || 'No sizes yet'}
+    </span>
+    <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, background: '#eff6ff', color: '#3b28cc', fontWeight: 600 }}>
+      {item.decoration}{(item.placements || []).length ? ` · ${item.placements.join(', ')}` : ''}
+    </span>
+    {item.logoUrl && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, background: '#fefce8', color: '#92400e', fontWeight: 600 }}>Logo attached</span>}
+    {item.supplierName && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, background: '#f5f3ff', color: '#6d28d9', fontWeight: 600 }}>Supplier: {item.supplierName}</span>}
+  </div>
+)}
                             {item.type === 'V' && getConsignments(vehicleAgreements[vehicleKey(item)]).length > 0 && (
                               <tr>
                                 <td colSpan="5" style={{ padding: 0, textAlign: 'left' }}>

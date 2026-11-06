@@ -955,8 +955,15 @@ exports.chargeInvoice = async (req, res) => {
     // ==========================================
     const physicalItems = [];
     const digitalItems = [];
+    const apparelItems = [];
 
     for (let item of cart) {
+      
+      if (item.type === 'W') 
+      { 
+        apparelItems.push(item); continue; 
+      }
+
       const isDigital = (item.type === 'M' || item.type === 'L');
 
       if (isDigital) {
@@ -1081,6 +1088,89 @@ exports.chargeInvoice = async (req, res) => {
         await connection.query(`UPDATE products SET qty = ?, modified_on = NOW() WHERE id = ?`, [item.stockAfter, item.productId]);
       }
     }
+
+    // ==========================================
+// 5. PROCESS APPAREL
+// ==========================================
+if (apparelItems.length > 0) {
+  const apparelSubtotal = apparelItems.reduce(
+    (s, i) => s + (parseFloat(i.price) || 0) * (parseInt(i.quantity, 10) || 1), 0);
+  const mixed = physicalItems.length > 0;
+  const groupRef = mixed ? `crm-${invoiceId || Date.now()}` : null;
+
+  // When seat covers share the checkout, link both orders into one card
+  if (mixed) {
+    await connection.query('UPDATE orders SET order_group_ref = ? WHERE id = ?', [groupRef, physicalOrderId]);
+  }
+
+  const orderAmount = mixed ? apparelSubtotal : totalDue;
+  const paidAmount  = mixed && totalDue > 0 ? Math.round(amountPaid * (apparelSubtotal / totalDue) * 100) / 100 : amountPaid;
+  const busDetail   = apparelItems.map(i => `${i.name} (${i.color}) x${i.quantity}`).join(' | ');
+
+  const [apOrder] = await connection.query('INSERT INTO orders SET ?', [{
+    user_id: userId, type: 1, business_name: '',
+    firstname: customerData.firstName, lastname: customerData.lastName,
+    email: customerData.email, phone_code: 0, cellnumber: customerData.phone, alt_phone: 0,
+    bus_detail: busDetail, bus_detail_2: busDetail, broker: '',
+    city_id: 0, state_id: 0, country_id: 0,
+    city: customerData.city, state: customerData.state, country: '',
+    address: customerData.address, zipcode: customerData.zip,
+    order_city: customerData.city, order_state: customerData.state, order_country: '',
+    order_zipcode: customerData.zip, order_address: customerData.address,
+    total_price: orderAmount.toString(), order_amount: orderAmount,
+    payment_status: paymentType === 'deposit' ? 2 : 1, paid_amount: paidAmount,
+    order_from: 'crm', website_id: 0, orders_status: 1, status: 1, is_deleted: 0,
+    order_group_ref: groupRef, created_on: new Date(), created_by: userId, modified_on: new Date(),
+  }]);
+  const apparelOrderId = apOrder.insertId;
+
+  for (const item of apparelItems) {
+    const sizes = Object.entries(item.sizes || {})
+      .map(([size, q]) => [String(size).trim(), parseInt(q, 10) || 0])
+      .filter(([, q]) => q > 0);
+    const pieces = sizes.reduce((s, [, q]) => s + q, 0);
+    if (pieces <= 0) throw new Error(`"${item.name}" has no sizes/quantities selected.`);
+
+    const unit  = parseFloat(item.price) || 0;
+    const total = unit * pieces;
+
+    const [pRows] = await connection.query('SELECT id FROM products WHERE id = ? AND is_deleted = 0', [item.itemId]);
+    if (!pRows.length) throw new Error(`Apparel product ${item.itemId} no longer exists.`);
+
+    // 1) order_items row (Orders::index reads total_price from here)
+    const [oi] = await connection.query(
+      `INSERT INTO order_items (order_id, category, product, description, ndr, discount, disc_price, qty, total_price, created_at)
+       VALUES (?, 0, ?, ?, ?, 0, ?, ?, ?, NOW())`,
+      [apparelOrderId, item.itemId, `${item.color} - ${item.decoration}`, unit, unit, pieces, total]
+    );
+
+    // 2) order_item_apparel
+    const notes = [
+      item.notes && String(item.notes).trim(),
+      item.modifyBy && `Modify by: ${item.modifyBy}`,
+      (item.options || []).length && `Options: ${item.options.join(', ')}`,
+      item.supplierName && `Supplier: ${item.supplierName}`,
+    ].filter(Boolean).join(' | ');
+
+    const [ap] = await connection.query(
+      `INSERT INTO order_item_apparel
+       (order_id, order_item_id, product_id, color, decoration, placement, total_pieces, notes, logo_url, production_status, created_on)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NOW())`,
+      [apparelOrderId, oi.insertId, item.itemId, String(item.color).slice(0, 50),
+       String(item.decoration || '').slice(0, 50),
+       (item.placements || []).join('+').slice(0, 50),
+       pieces, notes || null, item.logoUrl || null]
+    );
+
+    // 3) sizes (acquired_qty defaults to 0, admin allocates later)
+    for (const [size, q] of sizes) {
+      await connection.query(
+        'INSERT INTO order_item_apparel_sizes (apparel_id, size, qty) VALUES (?, ?, ?)',
+        [ap.insertId, size.slice(0, 10), q]
+      );
+    }
+  }
+}
 
     await connection.commit();
     res.status(200).json({ success: true, message: "Invoice successfully charged and distributed." });

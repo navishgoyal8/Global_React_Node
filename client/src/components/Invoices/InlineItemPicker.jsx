@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import RefineSearchModal from '../Inventory/RefineSearchModal';
+import ApparelPicker from './ApparelPicker';
 
 const cleanVehiclePrice = (raw) => {
   const v = parseFloat(String(raw || '').replace(/[^0-9.]/g, ''));
@@ -55,8 +56,9 @@ const InlineItemPicker = ({ cartItems, onChange, adPackages, listingPackages, me
   // in the cart wins, so the agent is never offered a combination that the
   // invoice cannot represent (a vehicle invoice is saved as type 7 and can
   // never carry a listing / membership / ads / renewal line).
-  const vehiclesLocked = Boolean(activePackageType);
-  const packagesLocked = cartItems.some(i => i.type === 'V');
+const hasApparel = cartItems.some(i => i.type === 'W');
+const vehiclesLocked = Boolean(activePackageType) || hasApparel;
+const packagesLocked = cartItems.some(i => i.type === 'V') || hasApparel;
 
   const toggleSubPanel = (key) => setSubCollapsed(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -334,6 +336,15 @@ const InlineItemPicker = ({ cartItems, onChange, adPackages, listingPackages, me
                 )}
               </div>
             </div>
+
+            <ApparelPicker
+              cartItems={cartItems}
+              onChange={onChange}
+              locked={Boolean(activePackageType) || cartItems.some(i => i.type === 'V') || cartItems.some(i => i.type === 'W')}
+              lockReason={cartItems.some(i => i.type === 'V')
+                          ? "Apparel can't be combined with a vehicle. Remove the vehicle first."
+                          : "Apparel can't be combined with a package. Remove the package first."}
+            />
 
             {/* Renewals — only shown while a renewal is the active package type */}
             {activePackageType === 'R' && (

@@ -857,7 +857,7 @@ const AssignLeadModal = ({ isOpen, onClose, lead, existingLeadData, onLeadSaved 
                       {selectedVehicles.length === 0 && (<div style={{ fontSize: '13px', color: '#9ca3af', fontStyle: 'italic' }}>No vehicles selected. Click the search bar above to add vehicles.</div>)}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', marginTop: '16px' }}>
-                      <button className="text-link" onClick={() => window.open(`https://${FRONTEND_URL}/sales/all-listing`, '_blank')}>View all vehicles</button>
+                      <button className="text-link" onClick={() => window.open(`${FRONTEND_URL}/sales/all-listing`, '_blank')}>View all vehicles</button>
                     </div>
                   </div>
                 </div>

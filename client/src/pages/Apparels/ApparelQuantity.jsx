@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import DesignPreview from '../../components/Apparel/DesignPreview';
 import SizeChartDrawer from '../../components/Apparel/SizeChartDrawer'
 import { fmtMoney, getSizes, parseTiers, priceFor } from '../../components/Apparel/apparelPricing';
+import { primaryImageUrl } from '../../utils/productImages';
 
 const CART_KEY = 'seatcover_cart';
 const CART_ROUTE = '/sales/crm/cart'; // TODO: change to your real cart route
@@ -12,6 +13,13 @@ const SHIPPING_NOTE = 'Free shipping'; // set to '' to hide the line
 const QTY_KEY = (pid) => `apparel-qty:${pid}`;
 const readSavedQty = (pid) => {
   try { return JSON.parse(sessionStorage.getItem(QTY_KEY(pid))) || null; } catch { return null; }
+};
+
+const resolveImageUrl = (img) => {
+  const clean = String(img || '').replace(/['"[\]]/g, '').trim();
+  if (!clean || clean === 'null') return null;
+  if (clean.startsWith('http')) return clean;
+  return primaryImageUrl(clean);
 };
 
 export default function ApparelQuantity() {
@@ -59,8 +67,8 @@ export default function ApparelQuantity() {
     setQty((q) => ({ ...q, [s.label]: n }));
   };
 
-   const hasChart = sizeList.some((s) => Object.values(s.chart || {}).some((v) => v != null && v !== ''));
-
+  const chartImage = resolveImageUrl(product?.size_chart_image);
+  const hasChart = !!chartImage || sizeList.some((s) => Object.values(s.chart || {}).some((v) => v != null && v !== ''));
     const handleAddToCart = () => {
     if (total < 1) return;
     const sizes = Object.fromEntries(
@@ -234,7 +242,12 @@ export default function ApparelQuantity() {
         )}
         <button className="qt-cart" disabled={total < 1} onClick={handleAddToCart}>{editingCartItemId ? 'Update Cart' : 'Add to Cart'}</button>
       </div>
-      <SizeChartDrawer open={chartOpen} onClose={() => setChartOpen(false)} sizes={sizeList} image={product.size_chart_image} />
-    </div>
+
+    <SizeChartDrawer 
+      open={chartOpen} 
+      onClose={() => setChartOpen(false)} 
+      sizes={sizeList} 
+      chartImage={chartImage} />    
+  </div>
   );
 }

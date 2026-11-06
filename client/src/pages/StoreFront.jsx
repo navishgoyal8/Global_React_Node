@@ -535,7 +535,7 @@ const Storefront = () => {
 
             let finalGallery = imagesArray.map(imgStr => {
               let str = imgStr.replace(/['"\[\]]+/g, '').trim();
-              return str.startsWith('http') ? str : `https://${FRONTEND_URL}/sales/uploads/products/${str}`;
+              return str.startsWith('http') ? str : `${FRONTEND_URL}/sales/uploads/products/${str}`;
             });
 
             if (finalGallery.length === 0) finalGallery = ['https://placehold.co/800x600/f3f4f6/9ca3af?text=No+Img'];
