@@ -8,21 +8,26 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_SECRET_KEY
 });
 
+const streamUpload = (buffer) => new Promise((resolve, reject) => {
+  const stream = cloudinary.uploader.upload_stream(
+    {
+      folder: 'globallimos_apparel',
+      resource_type: 'image',
+      transformation: [{ width: 2000, height: 2000, crop: 'limit', quality: 'auto' }],
+    },
+    (err, result) => (err ? reject(err) : resolve(result))
+  );
+  stream.end(buffer);
+});
+
 exports.uploadApparelLogo = async (req, res) => {
   try {
-    const { dataUrl } = req.body || {};
     
-    if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.includes(',')) {
+    if(!req.file) {
       return res.status(400).json({ success: false, message: 'No image data received.' });
     }
 
-    // Upload the raw Base64 Data URI directly to Cloudinary
-    const uploadResponse = await cloudinary.uploader.upload(dataUrl, {
-      folder: 'globallimos_apparel', // Groups your files in a specific folder
-      resource_type: 'image',
-      transformation: [{ width: 2000, height: 2000, crop: 'limit', quality: 'auto' }]
-    });
-
+    const uploadResponse = await streamUpload(req.file.buffer);
     // Cloudinary returns a publicly accessible, secure URL
     res.status(200).json({ 
       success: true, 

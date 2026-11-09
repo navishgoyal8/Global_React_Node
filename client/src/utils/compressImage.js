@@ -17,7 +17,12 @@ export const compressImage = (file, maxDim = 1600) => new Promise((resolve) => {
 
     const type = 'image/webp';
     canvas.toBlob(
-      (blob) => resolve(blob && blob.size < file.size ? blob : file), // never return a bigger file
+      (blob) => {
+        if(!blob || blob.size >= file.size) return resolve(file);
+        const ext = blob.type === 'image/webp' ? 'webp' : 'png';
+        const base = file.name.replace(/\.[^.]+$/,'');
+        resolve(new File([blob], `${base}.${ext}`, { type: blob.type }));
+      },
       type,
       0.85
     );

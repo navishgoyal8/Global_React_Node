@@ -22,7 +22,8 @@ const FileTextIcon = makeIcon(<><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h
 const RotateIcon = makeIcon(<><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></>);
 
 
-const MAX_LOGO_MB = 5;
+const MAX_LOGO_MB = 15;
+const MAX_UPLOAD_MB = 4;
 const UPLOAD_TIMEOUT_MS = 60000;
 
 const readDraft = (key) => {
@@ -445,6 +446,7 @@ const bgImage = useMemo(() => {
   const zoomBtn = { border: 'none', background: 'transparent', fontSize: 18, fontWeight: 700, width: 32, height: 32, cursor: 'pointer', color: '#0f172a' };
 
   const handleUploadFile = async (file) => {
+
   if (!file || uploading) return;
 
   if (file.size > MAX_LOGO_MB * 1024 * 1024) {
@@ -455,28 +457,37 @@ const bgImage = useMemo(() => {
   setUploading(true);
   try {
     const small = await compressImage(file);
-    console.log('original KB:', Math.round(file.size / 1024), 'compressed KB:', Math.round(small.size / 1024), small.type);
-    const preview = URL.createObjectURL(small);   // the editor now also works on the small image
 
-    const dataUrl = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(small);
-    });
+    if(small.size > MAX_UPLOAD_MB*1024*1024){
+      alert(`This image is still ${(small.size / 1024 / 1024).toFixed(1)}MB after optimizing. Please use a smaller or lower-resolution file.`);
+      return;
+    }
 
-    console.log('payload KB: ', Math.round(dataUrl.length / 1024))
-
+    const preview = URL.createObjectURL(small);   
+    const form = new FormData();
+    form.append('file', small, small.name || file.name);
+    form.append('fileName', small.name || file.name);
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), UPLOAD_TIMEOUT_MS);
     const res = await fetch(`${API_BASE_URL}/uploads/apparel-logo`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fileName: file.name, dataUrl }),
+      body: form,
       signal: ctrl.signal,
     }).finally(() => clearTimeout(timer));
 
-    const data = await res.json();
+    const data = await res.json().catch(() => null);
+
+    if(res.status === 413){
+      alert('This file is too large for the server. Please use a smaller image.')
+      return;
+    }
+
+    if(!res.ok){
+      console.error('Upload failed:',res.status,data);
+      alert(data?.message || 'Upload failed. Check your connection.');
+      return;
+    }
+
     if (data?.success) {
       setInitialDesign(null);
       setLogo({ url: data.url, preview });

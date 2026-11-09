@@ -567,6 +567,7 @@ const minOrder = useMemo(() => {
           x: (parseFloat(pa.x) || 0) + (parseFloat(pa.w) || 20) / 2,
           y: (parseFloat(pa.y) || 0) + (parseFloat(pa.h) || parseFloat(pa.w) || 20) / 2,
           w: parseFloat(pa.w) || 20,          
+          h: parseFloat(pa.h) || parseFloat(pa.w) || 20,
           extra_fee: parseFloat(pa.extra_fee) || 0,
           image: pa.image || null
         };
@@ -661,6 +662,7 @@ return items;
   const [galleryIdx, setGalleryIdx] = useState(0);
   const [customView, setCustomView] = useState('Front');
   const touchX = useRef(null);
+  const [imgAspect, setImgAspect] = useState(1);
 
   const idx = Math.min(galleryIdx, Math.max(0, gallery.length - 1));
   const current = gallery[idx] || null;
@@ -723,13 +725,19 @@ const overlays = [
   { key: 'active', at: curPreset ? idxFor(curPreset) : viewIdxOf(customView), pos: effPos },
 ];
 
-  const handleOpenEditor = () => {
+  const placeholders = logo ? [] : selectedPlacements.filter((p) => idxFor(p) === idx);
+
+  const handleOpenEditor = (_e, target) => {
+
+    const pl = target || curPreset;
+    const bg = pl?.image ? resolveImageUrl(pl.image) : currentBgImage;
+
     navigate(`/sales/crm/apparel/editor/${id}`, {
       state: {
         product: product,
         color: garmentColor,
-        placement: curPreset,
-        currentBgImage: currentBgImage,
+        placement: pl,
+        currentBgImage: bg,
         unitPrice: customizedUnit,
         placementLabels: selectedPlacements.map((p) => p.label),
         decoration,
@@ -1065,18 +1073,60 @@ const overlays = [
           <div className="tc-left">
             <div className="tc-gallery" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
                 
-              <div ref={shirtPreviewRef} onClick={placeLogoOnShirt} className="tc-canvas" style={{ cursor: logo && current?.view ? 'crosshair' : 'default' }}>
-                {current ? (
-                  <img key={current.src} className="tc-main" src={current.src} alt={`${productName} ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', pointerEvents: 'none' }} />
-                ) : (
-                  <ShirtGlyph color={shirtBg} view={activeView} />
-                )}
-               {logo && overlays.filter((o) => o.at === idx).map((o) => (
-                  <div key={o.key} style={{ position: 'absolute', left: o.pos.x + '%', top: o.pos.y + '%', transform: 'translate(-50%, -50%)', width: `${o.pos.w || 20}%`, aspectRatio: '1/1', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, overflow: 'hidden', background: '#fff', boxShadow: '0 0 0 2px rgba(255,255,255,0.75), 0 2px 10px rgba(0,0,0,0.18)' }}>
-                    <img src={logo.preview || logo.url} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', pointerEvents: 'none' }} />
-                  </div>
-                ))}
-              </div>
+              <div className="tc-canvas">
+  {/* stage = exactly the photo's size, so admin % coordinates match the editor */}
+  <div
+    ref={shirtPreviewRef}
+    onClick={placeLogoOnShirt}
+    style={{
+      position: 'relative',
+      aspectRatio: imgAspect,
+      maxWidth: '100%', maxHeight: '100%',
+      ...(imgAspect >= 1 ? { width: '100%' } : { height: '100%' }),
+      cursor: logo && current?.view ? 'crosshair' : 'default',
+    }}
+  >
+    {current ? (
+      <img
+        key={current.src}
+        className="tc-main"
+        src={current.src}
+        alt={`${productName} ${idx + 1}`}
+        onLoad={(e) => setImgAspect(e.target.naturalWidth / e.target.naturalHeight || 1)}
+        style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', pointerEvents: 'none' }}
+      />
+    ) : (
+      <ShirtGlyph color={shirtBg} view={activeView} />
+    )}
+
+    {/* "YOUR LOGO" placeholder, sized and placed from the admin print area */}
+    {placeholders.map((p) => (
+      <div
+        key={`ph-${p.id}`}
+        role="button"
+        aria-label={`Upload design for ${p.label}`}
+        onClick={(e) => { e.stopPropagation(); handleOpenEditor(null, p); }}
+        style={{
+          position: 'absolute', left: `${p.x}%`, top: `${p.y}%`,
+          width: `${p.w}%`, height: `${p.h ?? p.w}%`,
+          transform: 'translate(-50%, -50%)', boxSizing: 'border-box',
+          border: '1.5px dashed #334155', background: 'rgba(255,255,255,0.35)',
+          containerType: 'size', cursor: 'pointer',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4cqmin',
+        }}
+      >
+        <span style={{ width: '44cqmin', height: '44cqmin', borderRadius: '50%', background: 'conic-gradient(#f59e0b, #ef4444, #0ea5e9, #16a34a, #f59e0b)' }} />
+        <span style={{ fontSize: '14cqmin', fontWeight: 800, lineHeight: 1.05, color: '#0f172a', textAlign: 'center' }}>YOUR<br />LOGO</span>
+      </div>
+    ))}
+
+    {logo && overlays.filter((o) => o.at === idx).map((o) => (
+      <div key={o.key} style={{ position: 'absolute', left: o.pos.x + '%', top: o.pos.y + '%', transform: 'translate(-50%, -50%)', width: `${o.pos.w || 20}%`, aspectRatio: '1/1', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, overflow: 'hidden', background: '#fff', boxShadow: '0 0 0 2px rgba(255,255,255,0.75), 0 2px 10px rgba(0,0,0,0.18)' }}>
+        <img src={logo.preview || logo.url} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', pointerEvents: 'none' }} />
+      </div>
+    ))}
+  </div>
+</div>
 
               {gallery.length > 1 && (
                 <>
